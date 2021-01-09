@@ -859,7 +859,7 @@ unpack_frame_status pjmedia_unpack_rtp_h264(unsigned char* pRtpPkt, unsigned int
           return unpack_status;
     }
      
-    log_debug("recv rtp, pt:%u, seq:%u, m:%d, ts:%u, ssrc:%p, naltype:%d, len:%d", pkginfo.ucPayloadType, pkginfo.usSeq,
+    log_debug("recv rtp, pt:%u, seq:%u, m:%d, ts:%u, ssrc:%d, naltype:%d, len:%d", pkginfo.ucPayloadType, pkginfo.usSeq,
                              pkginfo.ucMarker, pkginfo.uTimeStamp, pkginfo.uSSRC,pkginfo.ucNalType, pkginfo.usPayloadLen);
 
     if(PJMEDIA_FORMAT_H264 == pUnpack->nCodecID)
