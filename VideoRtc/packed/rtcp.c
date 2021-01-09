@@ -49,3 +49,25 @@ pj_status_t rtcp_build_rtcp_nack( //pjmedia_rtcp_session *session,
 
     return PJ_SUCCESS;
 }
+
+pj_status_t pjmedia_rtcp_build_fir( void *buf, pj_size_t *length)
+{
+    pjmedia_rtcp_nack_common *hdr;
+    pj_size_t len;
+    
+    //PJ_ASSERT_RETURN(session && buf && length, PJ_EINVAL);
+
+       /* Verify buffer length */
+       len = sizeof(*hdr);
+     if (len > *length)
+         return -1;
+
+    /* Build RTCP FIR header */
+      hdr = (pjmedia_rtcp_nack_common*)buf;
+      //pj_memcpy(hdr, &session->rtcp_sr_pkt.common,  sizeof(*hdr));
+      hdr->pt = RTCP_FIR;
+      hdr->length = pj_htons((pj_uint16_t)(len/4 - 1));
+
+      *length = len;
+      return PJ_SUCCESS;
+}

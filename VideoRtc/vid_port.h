@@ -6,15 +6,19 @@
 #include "mediacodec.h"
 #endif
 
+#include "video_rtc_api.h"
+
 struct pjmedia_vid_port
 {
     void*useStream;
-    void*surface;
     pj_thread_t jbuf_recv_thread;
     
     #ifdef __ANDROID__
+    void*surface;
     MediaCodecDecoder *decoder;
     #endif
+    
+    rtp_frame_cb rtp_cb;
 };
 
 typedef struct pjmedia_vid_port pjmedia_vid_port;

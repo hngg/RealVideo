@@ -13,7 +13,7 @@
 #endif
 
 #ifndef PJ_LOG_MAX_LEVEL
-#  define PJ_LOG_MAX_LEVEL   2
+#  define PJ_LOG_MAX_LEVEL   4
 #endif
 
 #ifndef LOG_MAX_SIZE

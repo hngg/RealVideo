@@ -29,7 +29,7 @@ void pj_bzero(void *dst, pj_size_t size)
 #endif
 }
 
-void* pj_memcpy(void *dst, const void *src, pj_size_t size)
+void* pj_memcpy(void *dst, const void *src, pj_uint32_t size)
 {
     return memcpy(dst, src, size);
 }

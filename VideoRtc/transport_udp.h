@@ -156,6 +156,8 @@ struct transport_udp
 
 typedef struct transport_udp transport_udp;
 
+
+//create and destroy
 pj_status_t transport_udp_create(struct transport_udp** tpout, const char *addr, unsigned short port,
                                     void (*rtp_cb)(void*, void*, pj_ssize_t),
 				                    void (*rtcp_cb)(void*, void*, pj_ssize_t));
@@ -168,8 +170,11 @@ pj_status_t transport_udp_stop(struct transport_udp* tp);
 // pj_status_t transport_udp_start_recv( struct transport_udp* tp, const char*remoteAddr, unsigned short remoteRtpPort);
 // pj_status_t transport_udp_stop_recv( struct transport_udp* tp);
 
-pj_status_t transport_send_rtp(struct transport_udp*tp, const void *rtpPacket, pj_size_t size);
+
+//send
+pj_status_t transport_save_packet(struct transport_udp*tp, const void *rtpPacket, pj_uint32_t size);
 pj_status_t transport_send_rtp_seq(struct transport_udp*tp, const void *rtpPacket, pj_size_t size, unsigned short extSeq);
+pj_status_t transport_priority_send_rtp( transport_udp *udp, const void *rtpPacket, pj_uint32_t size);
 
 pj_status_t transport_send_rtcp(struct transport_udp*tp, const void *rtpPacket, pj_size_t size);
 

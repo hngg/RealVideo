@@ -217,39 +217,24 @@ pj_bool_t packet_list_create(struct  rtp_sendto_thread_list_header *list_header)
 pj_bool_t packet_list_destroy(struct  rtp_sendto_thread_list_header *list_header) {
 	if(!list_header)
 		return 0;
+    
 	if (list_header->mem_list != NULL)
 	{
 		memory_list_destroy(list_header->mem_list);
 		list_header->mem_list = NULL;
 	}
-	list_header->list_current_send 	= 0;
-	list_header->list_current_write = 0;
+	list_header->list_current_send 	= NULL;
+	list_header->list_current_write = NULL;
+    list_header->list_send_size     = 0;
 	list_header->list_write_size 	= 0;
+    list_header->send_loop_flg      = PJ_FALSE;
 	list_header->write_loop_flg		= PJ_FALSE;
-	list_header->list_send_size 	= 0;
-	list_header->send_loop_flg		= PJ_FALSE;
 	
 	return PJ_SUCCESS;
 }
 
 pj_bool_t packet_list_reset(struct  rtp_sendto_thread_list_header *list_header) 
 {
-
-
-	// rtp_sendto_thread_list_node* node =  list_header->list_current_send;
-	// rtp_sendto_thread_list_node* trackNode = node;
-	// int idrTrack = 0, idrIndex = 0, freeCount = 0, posType = sizeof(pjmedia_rtp_hdr);
-	// if(head->x) {
-	// 	int curPos = sizeof(pjmedia_rtp_hdr);
-	// 	pjmedia_rtp_ext_hdr *ext_hdr_data = (pjmedia_rtp_ext_hdr*)(pkt+curPos);
-	// 	curPos += sizeof(pjmedia_rtp_ext_hdr);
-	// 	ext_element_hdr *element_hdr = (ext_element_hdr*)(pkt+curPos);
-	// 	curPos += sizeof(ext_element_hdr);
-	// 	log_debug("profile:%04x len:%d local_id:%02x local_len:%d value:%02x\n", 
-	// 				htons(ext_hdr_data->profile_data), htons(ext_hdr_data->length), element_hdr->local_id, element_hdr->local_len, *(char*)(pkt+curPos));
-	// }
-
-
 	rtp_sendto_thread_list_node* node =  list_header->list_current_send;
 	int idrTrack = 0, idrIndex = 0, freeCount = 0, i=0;
 	rtp_sendto_thread_list_node* trackNode = node;
@@ -328,7 +313,7 @@ pj_bool_t packet_list_check_overflow(pj_uint32_t send, pj_uint32_t write, pj_uin
 	return (abs((int)(write - send)) > bufsize) ? (PJ_TRUE):(PJ_FALSE);	
 }
 
-pj_bool_t packet_list_node_add(struct  rtp_sendto_thread_list_header *list_header, const void *pkt, pj_size_t size) 
+pj_bool_t packet_list_node_add(struct rtp_sendto_thread_list_header *list_header, const void *pkt, pj_uint32_t size)
 {
 	if(!list_header || !pkt)
 		return 0;
@@ -346,9 +331,9 @@ pj_bool_t packet_list_node_add(struct  rtp_sendto_thread_list_header *list_heade
 	
 	
 	node->rtp_buf_size = size;
-	
 	pj_memcpy(node->rtp_buf, pkt, size);
 	node->next = NULL;
+    
 	if(list_header->list_write_size == MAX_LOOP_NUM)
 	{	
 		list_header->list_write_size = 0;
@@ -364,6 +349,7 @@ pj_bool_t packet_list_node_add(struct  rtp_sendto_thread_list_header *list_heade
 		list_header->list_current_send = node;
 	}
 
+    //important,list_current_write is dynamic and list_current_send is static(current node to send)
 	if(list_header->list_current_write == NULL)
 	{
 		list_header->list_current_write = node;
@@ -374,18 +360,11 @@ pj_bool_t packet_list_node_add(struct  rtp_sendto_thread_list_header *list_heade
 		list_header->list_current_write = node;
 	}
 	/* modify by j33783 20190509 end */
-	//printf("@@packet_list_node_add size:%d\n", size);
+
 	return PJ_SUCCESS;
 }
 
-rtp_sendto_thread_list_node  *packet_list_node_get(struct  rtp_sendto_thread_list_header *list_header) 
-{
-	if(list_header)
-		return list_header->list_current_send;
-	return NULL;
-}
-
-pj_bool_t packet_list_node_offset(struct  rtp_sendto_thread_list_header *list_header)
+pj_bool_t packet_list_node_offset(struct rtp_sendto_thread_list_header *list_header)
 {
 	if(!list_header)
 		return 0;
@@ -409,7 +388,22 @@ pj_bool_t packet_list_node_offset(struct  rtp_sendto_thread_list_header *list_he
 		memory_list_free(list_header->mem_list, node);
 		node = NULL;
 	}
-
+    
+    if(list_header->list_send_size == list_header->list_write_size) {
+        //why the note is not null(will leak memory?),20210108
+        if(list_header->list_current_send != NULL)
+            log_error("list_current_send is not null.");
+        
+        list_header->list_current_send = NULL;
+    }
+    
 	return PJ_SUCCESS;
+}
+
+rtp_sendto_thread_list_node  *packet_list_node_get(struct  rtp_sendto_thread_list_header *list_header)
+{
+    if(list_header)
+        return list_header->list_current_send;
+    return NULL;
 }
 

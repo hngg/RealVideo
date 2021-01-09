@@ -85,7 +85,7 @@ void ringbuffer_init(RingBuffer* pRingBuffer)
 	    pRingBuffer->uMaxPktTime = 0;
 	}
 	pj_bzero(pRingBuffer->xbuffer, VIDEO_PACKET_LENGTH*MAX_PACKET_NUMBER);
-	log_error("finish,resend_support:%d,uMaxPktTime:%d MAX_PACKET_NUMBER:%d\n", pRingBuffer->resend_support, pRingBuffer->uMaxPktTime, pRingBuffer->uPacketNum);
+	log_debug("finish,resend_support:%d,uMaxPktTime:%d MAX_PACKET_NUMBER:%d\n", pRingBuffer->resend_support, pRingBuffer->uMaxPktTime, pRingBuffer->uPacketNum);
 }
 
 int ringbuffer_write(RingBuffer* pRingBuffer, unsigned char* pRtpPkt, unsigned uRtpLen)
@@ -174,7 +174,7 @@ int ringbuffer_write(RingBuffer* pRingBuffer, unsigned char* pRtpPkt, unsigned u
 	pRingBuffer->uBufsizeTotal  += uRtpLen;
     pRingBuffer->uPacketCount++;
 
-	log_error("rtp seq:%u, len:%d, to buffer pos:%d", packSeq, pStorePkt->uPktLen, index);
+	log_debug("rtp seq:%u, len:%d, to buffer pos:%d", packSeq, pStorePkt->uPktLen, index);
 	
 	return status; 
 }
@@ -184,7 +184,7 @@ pj_status_t ringbuffer_read(RingBuffer* pRingBuffer, unsigned char* pRtpPkt, uns
 	pj_status_t status = PJ_FALSE;
 	int  curReadSeq = -1, curReadPos = -1, canRead = 0;
 	Packet_Store_ST_ *pStorePkt = NULL;
-	int offset;
+	//int offset;
 	
 	if(!pRingBuffer || !pRtpPkt || !pRtpLen)
 	{
@@ -231,7 +231,7 @@ pj_status_t ringbuffer_read(RingBuffer* pRingBuffer, unsigned char* pRtpPkt, uns
 				//calculate lost packate, send fir and find idr frame
 				canRead = 1;
 				pRingBuffer->uCuPktLost++;
-				log_error("lost packet count:%d seq %d\n", pRingBuffer->uCuPktLost, curReadSeq);
+				log_warn("lost packet count:%d seq %d\n", pRingBuffer->uCuPktLost, curReadSeq);
 			}
 		}
 
@@ -248,7 +248,7 @@ pj_status_t ringbuffer_read(RingBuffer* pRingBuffer, unsigned char* pRtpPkt, uns
 
 			status = PJ_TRUE;
 
-			log_error("rtp seq:%u, len:%d, from buffer pos:%u", pStorePkt->uPktSeq, pStorePkt->uPktLen, curReadPos);
+			log_debug("rtp seq:%u, len:%d, from buffer pos:%u", pStorePkt->uPktSeq, pStorePkt->uPktLen, curReadPos);
 		}
 
 	}

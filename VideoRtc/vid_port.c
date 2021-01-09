@@ -45,7 +45,12 @@ static  void  worker_thread_jbuf(void *arg)
                 #ifdef __ANDROID__
                     if(port->decoder)
                         mediacodec_decoder_render(port->decoder, (uint8_t*)stream->rtp_unpack_buf, frame_len);
+                #else
+                    if(port->rtp_cb)
+                        port->rtp_cb((char*)stream->rtp_unpack_buf, frame_len);
                 #endif
+                    
+
                 	// if(mwFile)
 				    //     fwrite((uint8_t*)stream->rtp_unpack_buf, 1, frame_len, mwFile);
                 }

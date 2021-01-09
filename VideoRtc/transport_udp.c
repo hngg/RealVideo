@@ -36,9 +36,9 @@ static void worker_rtp_sendto(void *arg)
 	rtp_sendto_thread_list_node  *rtp_node = NULL;
 	//pj_fd_set_t  send_set;
 	size_t	send_len = 0;
-	sigset_t all_mask, new_mask;
-	struct sigaction new_act;
-	struct timeval tv_s; //tv_e, tv_f;
+//	sigset_t all_mask, new_mask;
+//	struct sigaction new_act;
+	//struct timeval tv_s; //tv_e, tv_f;
 	unsigned short *seq;
 	unsigned int loop_cnt = 0;
 	
@@ -49,48 +49,48 @@ static void worker_rtp_sendto(void *arg)
 	// log_debug("enter to worker_rtp_sendto thread, prior:%d", max);
 
 
-	 sigprocmask(SIG_BLOCK, NULL , &all_mask);
-	 new_mask = all_mask;
-	 if(1==sigismember(&all_mask, SIGUSR1))
-	 {
-		sigdelset(&new_mask , SIGUSR1);
-		//log_debug("worker_rtp_sendto sigismember SIGUSR1");
-	 }
-	 else
-	 {
-		sigaddset(&all_mask , SIGUSR1);
-		 //log_debug("worker_rtp_sendto all_mask add  SIGUSR1");
-	 }
-
-	 if(0==sigismember(&new_mask, SIGUSR1))
-	 {
-	 	 //log_debug("worker_rtp_sendto sigismember new_mask no SIGUSR1");
-	 }
-	 
-	memset(&new_act, 0, sizeof(new_act));	
-	new_act.sa_handler = vid_sendto_exit_deal;	
-	sigemptyset( &new_act.sa_mask);	
-	sigaction(SIGUSR1, &new_act, NULL);
+//	 sigprocmask(SIG_BLOCK, NULL , &all_mask);
+//	 new_mask = all_mask;
+//	 if(1==sigismember(&all_mask, SIGUSR1))
+//	 {
+//		sigdelset(&new_mask , SIGUSR1);
+//		//log_debug("worker_rtp_sendto sigismember SIGUSR1");
+//	 }
+//	 else
+//	 {
+//		sigaddset(&all_mask , SIGUSR1);
+//		 //log_debug("worker_rtp_sendto all_mask add  SIGUSR1");
+//	 }
+//
+//	 if(0==sigismember(&new_mask, SIGUSR1))
+//	 {
+//	 	 //log_debug("worker_rtp_sendto sigismember new_mask no SIGUSR1");
+//	 }
+//
+//	memset(&new_act, 0, sizeof(new_act));
+//	new_act.sa_handler = vid_sendto_exit_deal;
+//	sigemptyset( &new_act.sa_mask);
+//	sigaction(SIGUSR1, &new_act, NULL);
 
 
 	udp = (struct transport_udp*)arg;
 
 
-	unsigned optVal = 0;
-	int optLen = sizeof(int);    
-    unsigned nSendBuf = 2048*1024;
-    unsigned nRecvBuf = 2048*1024;
-	
-	setsockopt(udp->rtp_sock,SOL_SOCKET,SO_SNDBUF,(const char*)&nSendBuf,sizeof(int));
-	setsockopt(udp->rtp_sock,SOL_SOCKET,SO_RCVBUF,(const char*)&nRecvBuf,sizeof(int));
-	
-	getsockopt(udp->rtp_sock, SOL_SOCKET, SO_SNDBUF, (char*)&optVal, &optLen);
-	//log_debug("socket send buffer size:%d", optVal);
-	//getsockopt(udp->rtp_sock, SOL_SOCKET, SO_RCVBUF, (char*)&optVal, &optLen);
-	log_debug("socket recv buffer size:%d", optVal);
+//	unsigned optVal = 0;
+//	int optLen = sizeof(int);
+//    unsigned nSendBuf = 2048*1024;
+//    unsigned nRecvBuf = 2048*1024;
+//
+//	setsockopt(udp->rtp_sock,SOL_SOCKET,SO_SNDBUF,(const char*)&nSendBuf,sizeof(int));
+//	setsockopt(udp->rtp_sock,SOL_SOCKET,SO_RCVBUF,(const char*)&nRecvBuf,sizeof(int));
+//
+//	getsockopt(udp->rtp_sock, SOL_SOCKET, SO_SNDBUF, (char*)&optVal, &optLen);
+//	//log_debug("socket send buffer size:%d", optVal);
+//	//getsockopt(udp->rtp_sock, SOL_SOCKET, SO_RCVBUF, (char*)&optVal, &optLen);
+//	log_debug("socket recv buffer size:%d", optVal);
 
 
-	log_error("begin to start worker_rtp_sendto thread rtp_sock:%d", udp->rtp_sock);
+	log_debug("begin to start worker_rtp_sendto thread rtp_sock:%d", udp->rtp_sock);
 	while(udp->rtp_sock != PJ_INVALID_SOCKET && !udp->vid_rtp_sendto_thread.thread_quit)
 	{
 		rtp_node = udp->rtp_thread_list_header.list_current_send;
@@ -109,7 +109,7 @@ static void worker_rtp_sendto(void *arg)
 			loop_cnt = 0;
 		}
 		
-	    gettimeofday(&tv_s, NULL);
+	    //gettimeofday(&tv_s, NULL);
 		
 		send_len = rtp_node->rtp_buf_size;
 		if(send_len != 0)
@@ -148,11 +148,12 @@ static void worker_rtp_sendto(void *arg)
 				log_error("send rtp packet:[%u] failure, send_len:%d rtp seq:[%u], errno:[%d] errstr:%s", udp->rtp_thread_list_header.list_send_size,  send_len, pj_ntohs(*seq), errno, strerror(errno));
 				usleep(5000);	
 			}
-			 pthread_mutex_lock(&udp->rtp_cache_mutex);
-			 packet_list_node_offset(&udp->rtp_thread_list_header);
-			 pthread_mutex_unlock(&udp->rtp_cache_mutex);
 		}
-
+        
+        pthread_mutex_lock(&udp->rtp_cache_mutex);
+        packet_list_node_offset(&udp->rtp_thread_list_header);
+        pthread_mutex_unlock(&udp->rtp_cache_mutex);
+        
 		// while(udp->rtp_sock != PJ_INVALID_SOCKET && !udp->vid_rtp_sendto_thread.thread_quit 
 		// 	&& !udp->rtp_thread_list_header.list_current_send && !udp->rtp_thread_list_header.list_current_send->next)
 		// {
@@ -174,7 +175,7 @@ static void worker_rtp_sendto(void *arg)
 static void worker_rtp_recvfrom(void *arg)
 {
 	    struct transport_udp *udp;
-	    pj_status_t status;
+	    ssize_t status;
 	    pj_ssize_t  bytes_read = 0;
 	    pj_uint32_t  value = 0;
 
@@ -278,7 +279,7 @@ static void worker_rtp_recvfrom(void *arg)
 
 static void worker_rtcp_recvfrom(void *arg)
 {
-	    pj_status_t status;
+	    ssize_t status;
 	    pj_ssize_t  bytes_read = 0;
 	    pj_uint32_t  value = 0;
 
@@ -398,7 +399,7 @@ pj_status_t transport_udp_create( struct transport_udp** tpout, const char *loca
 
 	//create rtp
     rtp_sock = socket(AF_INET, SOCK_DGRAM, 0);
-	log_error("create port:%d rtpsock:%d", rtpPort, rtp_sock);
+	log_debug("create port:%d rtpsock:%d", rtpPort, rtp_sock);
     if(rtp_sock < 0)
         return -1;
 
@@ -407,6 +408,11 @@ pj_status_t transport_udp_create( struct transport_udp** tpout, const char *loca
     struct timeval tv = {3, 0};
 	setsockopt(rtp_sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&tv, sizeof(struct timeval));
 	setsockopt(rtp_sock, SOL_SOCKET, SO_SNDTIMEO, (char*)&tv, sizeof(struct timeval));
+    
+    unsigned nSendBuf = 2048*1024;
+    unsigned nRecvBuf = 2048*1024;
+    setsockopt(rtp_sock, SOL_SOCKET,SO_SNDBUF, (const char*)&nSendBuf, sizeof(int));
+    setsockopt(rtp_sock, SOL_SOCKET,SO_RCVBUF, (const char*)&nRecvBuf, sizeof(int));
     
     tp->addr_len = sizeof(struct sockaddr_in);
     memset(&tp->local_rtp_addr, 0, tp->addr_len);
@@ -420,7 +426,7 @@ pj_status_t transport_udp_create( struct transport_udp** tpout, const char *loca
 		
 	//create rtcp 
     rtcp_sock = socket(AF_INET, SOCK_DGRAM, 0);
-	log_error("create rtcp_sock:%d", rtcp_sock);
+	log_debug("create rtcp_sock:%d", rtcp_sock);
     if(rtcp_sock<0)
         return -1;
 	optVal = 1;
@@ -505,7 +511,7 @@ pj_status_t transport_udp_start( struct transport_udp* tp, const char*remoteAddr
 
     //int pj_thread_create( const char *thread_name, thread_proc *proc, void *arg, pj_size_t stack_size, unsigned flags, pj_thread_t *pthread_out);
 	pj_thread_create("rtp_recv", (thread_proc *)&worker_rtp_recvfrom, tp, 0, 0, &tp->vid_rtp_recv_thread);
-	pj_thread_create("rtp_send", (thread_proc *)&worker_rtp_sendto, tp, 0, 0, &tp->vid_rtp_sendto_thread);
+	//pj_thread_create("rtp_send", (thread_proc *)&worker_rtp_sendto, tp, 0, 0, &tp->vid_rtp_sendto_thread);
 	pj_thread_create("rtcp_recv", (thread_proc *)&worker_rtcp_recvfrom, tp, 0, 0, &tp->vid_rtcp_recv_thread);
     if (status != 0) {
 		return status;
@@ -518,31 +524,22 @@ pj_status_t transport_udp_start( struct transport_udp* tp, const char*remoteAddr
 
 pj_status_t transport_udp_stop( struct transport_udp* tp) {
     pj_status_t status = 0;
-	tp->vid_rtp_sendto_thread.thread_quit 	= 1;
+	//tp->vid_rtp_sendto_thread.thread_quit 	= 1;
 	tp->vid_rtp_recv_thread.thread_quit 	= 1;
 	tp->vid_rtcp_recv_thread.thread_quit 	= 1;
     return status;
 }
 
-pj_status_t transport_send_rtp( struct transport_udp*tp, const void *rtpPacket, pj_size_t size) {
+pj_status_t transport_save_packet( struct transport_udp*tp, const void *rtpPacket, pj_uint32_t size) {
     pj_status_t status = 0;
-	//pjmedia_rtp_hdr *head = (pjmedia_rtp_hdr *)rtpPacket;
+	pjmedia_rtp_hdr *head = (pjmedia_rtp_hdr *)rtpPacket;
 	if(packet_list_check_overflow(tp->rtp_thread_list_header.list_send_size, tp->rtp_thread_list_header.list_write_size, RTP_LIST_MAX_SIZE))
 	{
 		packet_list_reset(&tp->rtp_thread_list_header);
 		log_debug("---reset---\n");
 	}
-	//printf("send_rtp ext:%d size:%d\n", head->x, tp->rtp_thread_list_header.list_write_size);
+	log_debug("save_packet ext:%d size:%d\n", head->x, tp->rtp_thread_list_header.list_write_size);
 
-	// if(head->x) {
-	// 	int curPos = sizeof(pjmedia_rtp_hdr);
-	// 	pjmedia_rtp_ext_hdr *ext_hdr_data = (pjmedia_rtp_ext_hdr*)(pkt+curPos);
-	// 	curPos += sizeof(pjmedia_rtp_ext_hdr);
-	// 	ext_element_hdr *element_hdr = (ext_element_hdr*)(pkt+curPos);
-	// 	curPos += sizeof(ext_element_hdr);
-	// 	log_debug("profile:%04x len:%d local_id:%02x local_len:%d value:%02x\n", 
-	// 				htons(ext_hdr_data->profile_data), htons(ext_hdr_data->length), element_hdr->local_id, element_hdr->local_len, *(char*)(pkt+curPos));
-	// }
 	pthread_mutex_lock(&tp->rtp_cache_mutex);
 	packet_list_node_add(&tp->rtp_thread_list_header, rtpPacket, size);
 	pthread_mutex_unlock(&tp->rtp_cache_mutex);
@@ -550,47 +547,82 @@ pj_status_t transport_send_rtp( struct transport_udp*tp, const void *rtpPacket, 
     return status;
 }
 
-static pj_status_t transport_priority_send_rtp( transport_udp *udp,
-							  const void *pkt,
-							  pj_size_t size)
+pj_status_t transport_priority_send_rtp( transport_udp *udp,
+							  const void *rtpPacket, pj_uint32_t size)
 {
-    //struct transport_udp *udp = (struct transport_udp*)tp;
-	ssize_t status = 0;
-
-	pthread_mutex_lock(&udp->udp_socket_mutex);
-	log_debug("send_priority add the packet");
-	status = sendto(udp->rtp_sock, pkt, size, 0, (const struct sockaddr *)&udp->rem_rtp_addr ,udp->addr_len);
-	log_debug("send_priority add the packet status:%d",status);
-	pthread_mutex_unlock(&udp->udp_socket_mutex);
+	ssize_t status        = 0;
+    pjmedia_rtp_hdr *head = NULL;
+    rtp_sendto_thread_list_node *rtp_node = udp->rtp_thread_list_header.list_current_send;
+    
+    while(rtp_node && udp->rtp_sock != PJ_INVALID_SOCKET && !udp->vid_rtp_sendto_thread.thread_quit)
+    {
+        size_t send_len = rtp_node->rtp_buf_size;
+        if(send_len != 0)
+        {
+            //mutex_lock(udp->udp_socket_mutex);
+            status = sendto(udp->rtp_sock, rtp_node->rtp_buf, send_len, 0, (const struct sockaddr *)&udp->rem_rtp_addr ,udp->addr_len);
+            if(status<0) {
+                head = (pjmedia_rtp_hdr*)(rtp_node->rtp_buf);
+                log_error("sendto rtp packet:[%u] failure, send_len:%d rtp seq:[%u], errno:[%d] errstr:%s", udp->rtp_thread_list_header.list_send_size,  send_len, pj_ntohs(head->seq), errno, strerror(errno));
+            }
+            //else continue;
+            log_debug("sendto packet node size:%d", send_len);
+        }else
+        {
+            log_error("sendto packet send_len is:%d", send_len);
+        }
+        packet_list_node_offset(&udp->rtp_thread_list_header);//remove current sending packet
+        
+        usleep(1000);
+        rtp_node = udp->rtp_thread_list_header.list_current_send;//next sending packet
+    }//check nodes done
+    
+    if(status == EAGAIN)
+        return (pj_status_t)status;
+    
+	//pthread_mutex_lock(&udp->udp_socket_mutex);
+    head = (pjmedia_rtp_hdr*)(rtpPacket);
+	status = sendto(udp->rtp_sock, rtpPacket, size, 0, (const struct sockaddr *)&udp->rem_rtp_addr ,udp->addr_len);
 	
-	return PJ_SUCCESS;	
+	//pthread_mutex_unlock(&udp->udp_socket_mutex);
+    if(status == EAGAIN) {
+        transport_save_packet(udp, rtpPacket, size);
+        log_error("sendto rtp packet failed status:%d", status);
+    }
+    else
+        log_debug("send_priority sendto the packet status:%d seq:%d",status, pj_ntohs(head->seq));
+    
+    resend_save_rtp(udp->resend, pj_ntohs(head->seq), (char*)rtpPacket, size);//save packet to nack
+    
+	return (pj_status_t)status;
 }
 
-pj_status_t transport_send_rtp_seq(struct transport_udp*tp, const void *rtpPacket, pj_size_t size, unsigned short extSeq) {
+pj_status_t transport_send_rtp_seq(struct transport_udp*udp, const void *rtpPacket, pj_size_t size, unsigned short extSeq) {
     pj_status_t status = 0;
+    
 	//pjmedia_rtp_hdr *head = (pjmedia_rtp_hdr *)rtpPacket;
-	if(packet_list_check_overflow(tp->rtp_thread_list_header.list_send_size, tp->rtp_thread_list_header.list_write_size, RTP_LIST_MAX_SIZE))
+	if(packet_list_check_overflow(udp->rtp_thread_list_header.list_send_size, udp->rtp_thread_list_header.list_write_size, RTP_LIST_MAX_SIZE))
 	{
-		packet_list_reset(&tp->rtp_thread_list_header);
+		packet_list_reset(&udp->rtp_thread_list_header);
 		log_debug("---reset---\n");
 	}
-	pthread_mutex_lock(&tp->rtp_cache_mutex);
-	packet_list_node_add(&tp->rtp_thread_list_header, rtpPacket, size);
-	resend_save_rtp( tp->resend, extSeq, (char*)rtpPacket, size);
-	pthread_mutex_unlock(&tp->rtp_cache_mutex);
+	pthread_mutex_lock(&udp->rtp_cache_mutex);
+	packet_list_node_add(&udp->rtp_thread_list_header, rtpPacket, size);
+	resend_save_rtp( udp->resend, extSeq, (char*)rtpPacket, size);
+	pthread_mutex_unlock(&udp->rtp_cache_mutex);
 
     return status;
 }
 
 pj_status_t transport_send_rtcp(struct transport_udp*tp, const void *rtpPacket, pj_size_t size)
 {
-    pj_status_t status = 0;
+    ssize_t status = 0;
 	if(tp&&rtpPacket&&(size>0)) {
 		transport_udp*udp = (struct transport_udp*)tp;
 		status = sendto(udp->rtcp_sock, rtpPacket, size, 0, (const struct sockaddr *)&udp->rem_rtcp_addr, udp->addr_len);
 		log_error("rtcp send length:%d\n", status);
 	}
-    return status;
+    return (pj_status_t)status;
 }
 
 

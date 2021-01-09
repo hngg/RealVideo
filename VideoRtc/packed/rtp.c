@@ -58,7 +58,7 @@ unsigned int pjmedia_video_add_rtp_exten(void *rtp_buf, pj_uint8_t ext_id, pj_ui
 	 return data;
  }
  
-int rtp_update_hdr(pjmedia_rtp_session *session, void *rtphdr, int mark, int payload_len, int timestamp)
+int rtp_update_hdr(pjmedia_rtp_session *session, void *rtphdr, int mark, int payload_len, long timestamp)
 {
 	int result = 0;
 	// if(!rtphdr)

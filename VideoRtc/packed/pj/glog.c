@@ -73,14 +73,14 @@ PJ_DEF(void) pj_log_6(const char *obj, const char *format, ...)
 }
 #endif
 
-void pj_log( const char *sender, int level, const char *format, va_list marker)
+
+void pj_log( const char *obj, int level, const char *format, va_list marker)
 {
 	const char *ltexts[] = { "FATAL:", "ERROR:", " WARN:", " INFO:", "DEBUG:", "TRACE:", "DETRC:"};
-	char log_buffer[LOG_MAX_SIZE];
-	char *pre = log_buffer;
-	strcpy(pre, ltexts[level]);
-	pre += 6;
-	vsnprintf(pre, LOG_MAX_SIZE, format, marker);
+    char log_buffer[LOG_MAX_SIZE]= {0};
+	strcpy(log_buffer, ltexts[level]);
+    //remember,destination buffer should not be overflow
+	vsnprintf(log_buffer+6, LOG_MAX_SIZE-7, format, marker);
 	printf("%s\n", log_buffer);
 }
 

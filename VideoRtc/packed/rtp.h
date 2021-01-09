@@ -119,6 +119,6 @@ typedef struct pjmedia_rtp_session pjmedia_rtp_session;
 
 char pjmedia_rtp_rotation_ext(int oritentation);
 unsigned int pjmedia_video_add_rtp_exten(void *rtp_buf, pj_uint8_t ext_id, pj_uint8_t *ext_val, int ext_len);
-int rtp_update_hdr(pjmedia_rtp_session *session, void *rtphdr, int mark, int payload_len, int timestamp);
+int rtp_update_hdr(pjmedia_rtp_session *session, void *rtphdr, int mark, int payload_len, long timestamp);
 
 #endif	/* __PJMEDIA_RTP_H__ */

@@ -73,7 +73,7 @@ pj_bool_t packet_list_create(struct  rtp_sendto_thread_list_header *list_header)
 pj_bool_t packet_list_destroy(struct  rtp_sendto_thread_list_header *list_header);
 pj_bool_t packet_list_reset(struct  rtp_sendto_thread_list_header *list_header);
 pj_bool_t packet_list_check_overflow(pj_uint32_t send, pj_uint32_t write, pj_uint32_t bufsize);
-pj_bool_t packet_list_node_add(struct  rtp_sendto_thread_list_header *list_header, const void *pkt, pj_size_t size);
+pj_bool_t packet_list_node_add(struct  rtp_sendto_thread_list_header *list_header, const void *pkt, pj_uint32_t size);
 rtp_sendto_thread_list_node  *packet_list_node_get(struct  rtp_sendto_thread_list_header *list_header);
 pj_bool_t packet_list_node_offset(struct  rtp_sendto_thread_list_header *list_header);
 

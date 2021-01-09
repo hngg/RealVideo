@@ -11,9 +11,12 @@ COMPLIE_LIB  = -L./ -lpthread -lm
 CFLAGS 		= -Wall -DHAVE_CONFIG_H -g -fPIC -O2 -Wno-unused-label -miphoneos-version-min=7.0 -DPJ_SDK_NAME="\"iPhoneOS13.6.sdk\"" -arch arm64 -isysroot /Applications/XCode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS13.6.sdk -DPJ_IS_BIG_ENDIAN=0 -DPJ_IS_LITTLE_ENDIAN=1#-DHAVE_SYS_TIME_H
 CXXFLAGS += $(COMPLIE_INCL) 
 LDFLAGS += $(COMPLIE_LIB)
+LDFLAGS += -arch arm64 -mios-version-min=6.0   -Wl,  -Bsymbolic-functions
 
 CFLAGS  += -I./ -I./packed
-CFLAGS	+= $(COMPLIE_INCL) 
+CFLAGS	+= $(COMPLIE_INCL)
+CFLAGS  += -Wall -O3 -arch arm64 -mios-version-min=6.0
+
 
 TARGET:RTCLIB
 
@@ -45,7 +48,7 @@ $(UNITTest):$(UNIT_OBJ)
 	$(CC) -o $(UNITTest) $(UNIT_OBJ) $(LDFLAGS)
 
 $(RTCLIB):$(OBJECTS)
-	$(AR) rcs librtc.a $(OBJECTS)
+	$(AR) rcs libVideoRtc.a $(OBJECTS)
 
 .PHONY:clean
 clean:

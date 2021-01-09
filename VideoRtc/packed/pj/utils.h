@@ -19,11 +19,11 @@
 //#define PJ_INLINE(type)	  PJ_INLINE_SPECIFIER type
 
 
-long get_currenttime_us();
+long get_currenttime_us(void);
 long get_timeofday_us(const struct timeval *tval);
 
 void pj_bzero(void *dst, pj_size_t size);
-void* pj_memcpy(void *dst, const void *src, pj_size_t size);
+void* pj_memcpy(void *dst, const void *src, pj_uint32_t size);
 pj_uint16_t pj_ntohs(pj_uint16_t netshort);
 pj_uint16_t pj_htons(pj_uint16_t netshort);
 
