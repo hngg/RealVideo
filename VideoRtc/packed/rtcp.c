@@ -2,13 +2,58 @@
 
 #include "rtcp.h"
 #include "utils.h"
+#include "os.h"
+#include "glog.h"
 
+pj_status_t rtcp_build_rtcp_sr(void *buf, pj_size_t *length)
+{
+    pjmedia_rtcp_sr_pkt *sr_pkt = (pjmedia_rtcp_sr_pkt*)buf;
+    /* Init common RTCP SR header */
+    sr_pkt->common.version  = 2;
+    sr_pkt->common.count    = 1;
+    sr_pkt->common.pt       = RTCP_SR;
+    sr_pkt->common.length   = pj_htons(12);
+    sr_pkt->rr.lsr = (pj_uint32_t)get_currenttime_us();
+    
+    *length = sizeof(struct pjmedia_rtcp_sr_pkt);
+    log_debug("rtcp sr genaner lsr:%d", sr_pkt->rr.lsr);
+    return PJ_SUCCESS;
+}
 
+pj_status_t rtcp_build_rtcp_rr(void *buf, pj_size_t *length, int lsr, int dlsr)
+{
+    pjmedia_rtcp_rr_pkt *rr_pkt = (pjmedia_rtcp_rr_pkt*)buf;
+    /* Init common RTCP SR header */
+    rr_pkt->common.version  = 2;
+    rr_pkt->common.count    = 1;
+    rr_pkt->common.pt       = RTCP_RR;
+    rr_pkt->common.length   = pj_htons(12);
+    rr_pkt->rr.lsr  = lsr;
+    rr_pkt->rr.dlsr = dlsr;
+    
+    *length = sizeof(struct pjmedia_rtcp_rr_pkt);
+    
+    return PJ_SUCCESS;
+}
+
+pj_status_t rtcp_build_rtcp_nack_(  void *buf, pj_size_t *length, unsigned begin_seq, unsigned seq_num)
+{
+    pjmedia_rtcp_nack_pkg *pkg = (pjmedia_rtcp_nack_pkg *)buf;
+    pkg->common.pt  = RTCP_NACK;
+    pkg->common.fmt = 1;
+    pkg->common.version = 2;
+    pkg->common.length  = sizeof(pjmedia_rtcp_nack_pkg);
+    pkg->nack.base_seq  = begin_seq;
+    pkg->nack.flag      = seq_num;
+    
+    return PJ_SUCCESS;
+}
 
 pj_status_t rtcp_build_rtcp_nack( //pjmedia_rtcp_session *session, 
 					    void *buf,
 					    pj_size_t *length,
-					    const pjmedia_rtcp_nack *nack){
+					    const pjmedia_rtcp_nack *nack)
+{
     pjmedia_rtcp_nack_common *hdr;
     pj_uint8_t *p;
 	pj_uint32_t *p32;

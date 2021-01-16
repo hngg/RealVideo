@@ -11,14 +11,14 @@
 
 
 #ifndef PJMEDIA_MAX_MRU
-#define PJMEDIA_MAX_MRU                        2000
+#define PJMEDIA_MAX_MRU                  2000
 #endif
-
-#define RESEND_BUFF_NUMBER  1024
 
 #define RTP_LEN            PJMEDIA_MAX_MRU
 /* Maximum size of incoming RTCP packet */
-#define RTCP_LEN    600
+#define RTCP_LEN            600
+
+#define RESEND_BUFF_NUMBER  1024
 
 #ifndef PJ_SOCKADDR_IN_SIN_ZERO_LEN
 #   define PJ_SOCKADDR_IN_SIN_ZERO_LEN	8
@@ -108,63 +108,60 @@ typedef struct pjmedia_vid_buf
 		pj_uint16_t	   buf_size; /*buffer size*/ 
 } pjmedia_vid_buf;
 
+typedef struct trans_channel
+{
+    void *user_udp;
+    pj_bool_t is_rtcp;
+    int sockfd;             //socket id
+    struct sockaddr_in rem_addr; //remote socket addr to sendto
+    struct sockaddr_in src_addr; //source socket addr of recvfrom
+    pj_thread_t recv_tid;       //recv thread id
+    char recv_buf[RTP_LEN];     //recv buffer
+    on_recv_data recv_cb; //recv data callback fuction
+    struct rtp_sendto_thread_list_header send_list; //save packet to list when sendto buffer is full
+    
+} trans_channel;
+
 struct transport_udp
 {
     //pjmedia_transport	base;		/**< Base transport.		    */
 
-    pj_pool_t	    *pool;		/**< Memory pool		    */
-    unsigned		options;	/**< Transport options.		    */
-    unsigned		media_options;	/**< Transport media options.	    */
+    pj_pool_t	    *pool;		// Memory pool
+    unsigned		options;	//Transport options.
+    unsigned		media_options;	// Transport media options.
 
-    void	       *user_data;	/**< Only valid when attached	    */
-    pj_bool_t		attached;	/**< Has attachment?		    */
+    void	        *user_stream;	//struct pjmedia_vid_stream point address
+    pj_bool_t		attached;
 
-    //remote
-    struct sockaddr_in		rem_rtp_addr;	/**< Remote RTP address		    */
-    struct sockaddr_in		rem_rtcp_addr;	/**< Remote RTCP address	    */
-    socklen_t			    addr_len;	/**< Length of addresses.	    */
-    void (*rtp_cb)(void*, void*, pj_ssize_t);		/**< To report incoming RTP.	    */
-    void (*rtcp_cb)(void*, void*, pj_ssize_t);		/**< To report incoming RTCP.	    */
-			
-
-    char		    rtp_pkt[RTP_LEN];/**< Incoming RTP packet buffer    */
-    char		    rtcp_pkt[RTCP_LEN];/**< Incoming RTCP packet buffer */
-
-    //unsigned		tx_drop_pct;	/**< Percent of tx pkts to drop.    */
-    //unsigned		rx_drop_pct;	/**< Percent of rx pkts to drop.    */
-
-    //local
-    int	    rtp_sock;	/**< RTP socket			    */
-    struct sockaddr_in		local_rtp_addr;	/**< Published RTP address.	    */
-    int		rtcp_sock;	/**< RTCP socket		    */
-    struct sockaddr_in		local_rtcp_addr;	/**< Published RTCP address.	    */
-
-
-    //rtp thread
-    pj_thread_t      vid_rtp_recv_thread;
-    pj_thread_t		 vid_rtp_sendto_thread;
-    struct  rtp_sendto_thread_list_header     rtp_thread_list_header;
+    
+    //socklen_t       addr_len;    /**< Length of addresses.        */
     pjmedia_vid_buf *resend;
-
-    //rtcp thread
-    pj_thread_t      vid_rtcp_recv_thread;
-
+    
+    //local
+    struct sockaddr_in        local_rtp_addr;    /**< Published RTP address.        */
+    struct sockaddr_in        local_rtcp_addr;    /**< Published RTCP address.        */
+    
     //memory_list *mem_list;
-	pthread_mutex_t  rtp_cache_mutex;
-	pthread_mutex_t  udp_socket_mutex;  /* add by j33783 20190509 */
+    pthread_mutex_t  rtp_cache_mutex;
+    pthread_mutex_t  udp_socket_mutex;  /* add by j33783 20190509 */
+    
+    
+    struct trans_channel rtp_chanel;    //rtp send and recv channel
+    struct trans_channel rtcp_chanel;   //rtcp send and recv channel
+    
 };
 
 typedef struct transport_udp transport_udp;
 
 
 //create and destroy
-pj_status_t transport_udp_create(struct transport_udp** tpout, const char *addr, unsigned short port,
+pj_status_t transport_udp_create(struct transport_udp** udpout, const char *addr, unsigned short port,
                                     void (*rtp_cb)(void*, void*, pj_ssize_t),
 				                    void (*rtcp_cb)(void*, void*, pj_ssize_t));
-pj_status_t transport_udp_destroy(struct transport_udp* tp);
+pj_status_t transport_udp_destroy(struct transport_udp* udp);
 
-pj_status_t transport_udp_start(struct transport_udp* tp, const char*remoteAddr, unsigned short remoteRtpPort);
-pj_status_t transport_udp_stop(struct transport_udp* tp);
+pj_status_t transport_udp_start(struct transport_udp* udp, const char*remoteAddr, unsigned short remoteRtpPort);
+pj_status_t transport_udp_stop(struct transport_udp* udp);
 // pj_status_t transport_udp_start_send( struct transport_udp* tp, const char*remoteAddr, unsigned short remoteRtpPort);
 // pj_status_t transport_udp_stop_send( struct transport_udp* tp);
 // pj_status_t transport_udp_start_recv( struct transport_udp* tp, const char*remoteAddr, unsigned short remoteRtpPort);
@@ -172,14 +169,15 @@ pj_status_t transport_udp_stop(struct transport_udp* tp);
 
 
 //send
-pj_status_t transport_save_packet(struct transport_udp*tp, const void *rtpPacket, pj_uint32_t size);
-pj_status_t transport_send_rtp_seq(struct transport_udp*tp, const void *rtpPacket, pj_size_t size, unsigned short extSeq);
-pj_status_t transport_priority_send_rtp( transport_udp *udp, const void *rtpPacket, pj_uint32_t size);
+pj_status_t transport_priority_send_rtp( transport_udp* udp, const void *rtpPacket, pj_uint32_t size);
+pj_status_t transport_send_rtcp(struct transport_udp* udp, const void *rtpPacket, pj_uint32_t size);
 
-pj_status_t transport_send_rtcp(struct transport_udp*tp, const void *rtpPacket, pj_size_t size);
+pj_status_t transport_save_packet(struct transport_udp* udp, const void *rtpPacket, pj_uint32_t size);
+pj_status_t transport_send_rtp_seq(struct transport_udp* udp, const void *rtpPacket, pj_size_t size, unsigned short extSeq);
 
-pj_status_t transport_reset_socket(struct transport_udp*  tp);
-pj_status_t transport_reset_rtp_socket(struct transport_udp*  tp);
+
+pj_status_t transport_reset_socket(struct transport_udp* udp);
+pj_status_t transport_reset_rtp_socket(struct transport_udp*  udp);
 
 #endif
 

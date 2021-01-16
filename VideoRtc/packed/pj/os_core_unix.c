@@ -31,7 +31,7 @@ int pj_thread_create( const char *thread_name,
 	    return -2;
     }
     strcpy(pthread_out->obj_name, thread_name);
-    return pthread_out->threadId;
+    return (int)pthread_out->threadId;
 }
 
 int pj_thread_destroy(pj_thread_t *pthread) {
@@ -47,3 +47,4 @@ int pj_thread_destroy(pj_thread_t *pthread) {
 
     return status;
 }
+

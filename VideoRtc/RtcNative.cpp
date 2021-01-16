@@ -23,7 +23,7 @@
 #define NELEM(x) ((int) (sizeof(x) / sizeof((x)[0])))
 #endif
 
-#define REG_PATH "com/wy/mptt/medialib/NativeVideoRtc"
+#define REG_PATH "com/gegepad/modtrunk/medialib/NativeVideoRtc"
 
 
 JavaVM*	g_javaVM	= NULL;
@@ -160,17 +160,21 @@ int FrameCallback( jbyte*frame, int length) {
 	return 0;
 }
 
-int startRecvRender(JNIEnv *env, jobject obj, 
-					jstring strLocalAddr, int localPort, jobject surface, int codecType) 
+int startRecvRender(JNIEnv *env, jobject obj, jstring strLocalAddr, int localPort,
+					jstring strRemoteAddr, int remotePort, jobject surface, int codecType)
 {
 	int status = 0;
 	jboolean isOk = JNI_FALSE;
 	ANativeWindow *pAnw = ANativeWindow_fromSurface(env, surface);
 	const char* localAddr = env->GetStringUTFChars(strLocalAddr, &isOk);
+    const char* remoteAddr = env->GetStringUTFChars(strRemoteAddr, &isOk);
 	status = vid_stream_create(localAddr, localPort, pAnw, codecType);//local
 	if(status>=0)
-		vid_stream_start( localAddr, localPort);//remote
+		vid_stream_start( remoteAddr, remotePort);//remote
+    
 	env->ReleaseStringUTFChars(strLocalAddr, localAddr);
+    env->ReleaseStringUTFChars(strRemoteAddr, remoteAddr);
+    
 	log_info("startRecvRender done.");
 
 	return status;
@@ -239,7 +243,7 @@ int sendSampleData(JNIEnv *env, jobject obj, jobject byteBuf, jint offset, jint 
 }
 
 static JNINativeMethod video_method_table[] = {
-		{ "startRecvRender", "(Ljava/lang/String;ILandroid/view/Surface;I)I", (void *)startRecvRender },
+		{ "startRecvRender", "(Ljava/lang/String;ILjava/lang/String;ILandroid/view/Surface;I)I", (void *)startRecvRender },
 		{ "stopRecvRender", "()I", (void *)stopRecvRender },
 
 		{ "startSendVideo", "(Ljava/lang/String;ILjava/lang/String;II)I", (void *)startSendVideo },

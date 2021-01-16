@@ -8,13 +8,6 @@
 #include "jitter_buffer.h"
 
 
-pj_ssize_t getCurrentTimeMs()
-{
-	struct timeval tv_cur;
-	gettimeofday(&tv_cur, NULL);
-	return tv_cur.tv_sec*1000 + tv_cur.tv_usec/1000; 
-}
-
 pj_status_t ringbuffer_create(unsigned packet_size, pj_bool_t resend_support, RingBuffer **p_jb)
 {
 	RingBuffer*prb = ringbuffer_alloc( VIDEO_PACKET_LENGTH, MAX_PACKET_NUMBER);
@@ -25,7 +18,8 @@ pj_status_t ringbuffer_create(unsigned packet_size, pj_bool_t resend_support, Ri
 	return PJ_SUCCESS;
 }
 
-RingBuffer* ringbuffer_alloc( unsigned mtu, unsigned packetNum) {
+RingBuffer* ringbuffer_alloc( unsigned mtu, unsigned packetNum)
+{
 	RingBuffer* pRingBuffer = (RingBuffer*)malloc(sizeof(RingBuffer));
 	if(!pRingBuffer)
 	{
@@ -48,8 +42,9 @@ RingBuffer* ringbuffer_alloc( unsigned mtu, unsigned packetNum) {
 void ringbuffer_destory(RingBuffer* pRingBuffer)
 {
 	//PJ_UNUSED_ARG(pRingBuffer);
-	if(pRingBuffer->xbuffer)
+    if(pRingBuffer->xbuffer) {
 		free(pRingBuffer->xbuffer);
+    }
 
 	free(pRingBuffer);
 

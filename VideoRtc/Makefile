@@ -18,7 +18,7 @@ TARGET:SEND RECV UNITTest
 
 OBJECTS = NALDecoder.o vid_codec.o vid_port.o vid_stream.o transport_udp.o  \
 		  packed/packets_list.o packed/jitter_buffer.o packed/callCplus.o packed/dealrtpunpack.o \
-		  packed/h264_packetizer.o packed/rtp.o packed/pj/os_core_unix.o packed/pj/utils.o packed/pj/glog.o
+		  packed/h264_packetizer.o packed/rtp.o packed/rtcp.o packed/pj/os_core_unix.o packed/pj/utils.o packed/pj/glog.o
 
 SEND_OBJ = $(OBJECTS) \
 			rtc_send.o

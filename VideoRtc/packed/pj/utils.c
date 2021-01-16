@@ -3,8 +3,7 @@
 long get_currenttime_us() {
 	struct timeval tv_cur;
 	gettimeofday(&tv_cur, NULL);
-	long time = tv_cur.tv_sec*1000000 + tv_cur.tv_usec;
-	return time;
+	return tv_cur.tv_sec*1000000 + tv_cur.tv_usec;
 }
 
 long get_timeofday_us(const struct timeval *tval) {
@@ -13,6 +12,13 @@ long get_timeofday_us(const struct timeval *tval) {
     return  tval->tv_sec*1000000 + tval->tv_usec;
 }
 
+
+pj_ssize_t getCurrentTimeMs()
+{
+    struct timeval tv_cur;
+    gettimeofday(&tv_cur, NULL);
+    return tv_cur.tv_sec*1000 + tv_cur.tv_usec/1000;
+}
 
 /**
  * Fill the memory location with zero.

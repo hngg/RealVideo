@@ -152,15 +152,25 @@ typedef struct pjmedia_rtcp_nack
 	unsigned	flag:16;	/**< The flag of resend RTP seq number */
 } pjmedia_rtcp_nack;
 
-
-typedef struct rtcp_nack_packet
+typedef struct pjmedia_rtcp_nack_pkg
 {
-    pj_uint32_t	ssrc;		/**< RTCP media source.	*/
-    unsigned short  number;
-	unsigned short	start_seq;	/**< Based seq number of resend RTP seq*/
-	unsigned short	end_seq;	/**< The flag of resend RTP seq number */
-} rtcp_nack_packet;
+    pjmedia_rtcp_nack_common common;
+    pjmedia_rtcp_nack nack;
+}pjmedia_rtcp_nack_pkg;
 
+//typedef struct rtcp_nack_packet
+//{
+//    pj_uint32_t	ssrc;		/**< RTCP media source.	*/
+//    unsigned short  number;
+//	unsigned short	start_seq;	/**< Based seq number of resend RTP seq*/
+//	unsigned short	end_seq;	/**< The flag of resend RTP seq number */
+//} rtcp_nack_packet;
+
+
+pj_status_t rtcp_build_rtcp_sr(void *buf, pj_size_t *length);
+pj_status_t rtcp_build_rtcp_rr(void *buf, pj_size_t *length, int lsr, int dlsr);
+
+pj_status_t rtcp_build_rtcp_nack_( void *buf, pj_size_t *length, unsigned begin_seq, unsigned seq_num);
 
 pj_status_t rtcp_build_rtcp_nack( //pjmedia_rtcp_session *session, 
 					    void *buf,

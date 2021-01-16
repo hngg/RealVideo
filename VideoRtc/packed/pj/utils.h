@@ -21,6 +21,8 @@
 
 long get_currenttime_us(void);
 long get_timeofday_us(const struct timeval *tval);
+pj_ssize_t getCurrentTimeMs(void);
+
 
 void pj_bzero(void *dst, pj_size_t size);
 void* pj_memcpy(void *dst, const void *src, pj_uint32_t size);

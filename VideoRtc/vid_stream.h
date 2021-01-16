@@ -56,13 +56,13 @@
 
 struct pjmedia_vid_stream
 {
+    transport_udp           *trans;
+    
     pjmedia_format_id       fmt_id;
-
     unsigned                clock_rate;
     uint64_t                first_pts;
     float                   pts_ratio;
     pjmedia_rtp_session     rtp_session;
-    transport_udp           *trans;
     pjmedia_vid_port        vid_port;
     RingBuffer*             ringbuf;          /**< Jitter buffer optimize.            */
     void* rtp_unpack_buf;

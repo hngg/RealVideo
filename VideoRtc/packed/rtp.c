@@ -39,7 +39,7 @@ unsigned int pjmedia_video_add_rtp_exten(void *rtp_buf, pj_uint8_t ext_id, pj_ui
 
  char pjmedia_rtp_rotation_ext(int oritentation)
  {
-  	 char data;
+  	 char data = 0;
 	 switch(oritentation)
 	 {
 		 case 0:  data = VIDEO_RTP_EXT_ID_CVO_DATA_ROTATION_0; break;
