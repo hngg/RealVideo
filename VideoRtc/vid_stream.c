@@ -127,13 +127,21 @@ static void on_rx_rtcp(void *useData, void *pkt, pj_ssize_t bytes_read)
     pjmedia_rtcp_common *common = (pjmedia_rtcp_common*)pkt;
     pjmedia_rtcp_sr_pkt *sr = NULL;
     pjmedia_rtcp_rr_pkt *rr = NULL;
+<<<<<<< HEAD
+    pjmedia_rtcp_nack_pkg *nack = NULL;
+    pjmedia_vid_stream  *stream = (pjmedia_vid_stream *)useData;
+=======
     pjmedia_vid_stream *stream = NULL;
+>>>>>>> d0e83e775b61c141acf0f986720c005b7d0f6a80
     char rtcp[100] = {0};
     pj_size_t size = 0;
     switch(common->pt)
     {
         case RTCP_SR:
+<<<<<<< HEAD
+=======
             stream = (pjmedia_vid_stream *)useData;
+>>>>>>> d0e83e775b61c141acf0f986720c005b7d0f6a80
             sr = (pjmedia_rtcp_sr_pkt*)pkt;
             rtcp_build_rtcp_rr(rtcp, &size, sr->rr.lsr, (int)(get_currenttime_us()-start_time));
             if(size>0){
@@ -144,11 +152,27 @@ static void on_rx_rtcp(void *useData, void *pkt, pj_ssize_t bytes_read)
             
         case RTCP_RR:
             rr = (pjmedia_rtcp_rr_pkt*)pkt;
+<<<<<<< HEAD
+            int rrtus = (int)(get_currenttime_us() - rr->rr.lsr);
+            if(stream->network_cb)
+                stream->network_cb(rrtus - rr->rr.dlsr, 0, 0);
+            log_debug("rtcp recv rr rtt time:%d lsr:%d us delay:%d us",
+                      rrtus, rr->rr.lsr, rr->rr.dlsr );
+            break;
+            
+        case RTCP_NACK:
+            nack = (pjmedia_rtcp_nack_pkg *)pkt;
+            unsigned    base_seq = nack->nack.base_seq;
+            unsigned    count = nack->nack.flag;
+            resend_losted_package(stream->trans, base_seq, count);
+            log_debug("rtcp recv nack begin_seq:%d count:%d", base_seq, count);
+=======
             log_debug("rtcp recv rr rtt time:%d lsr:%d us delay:%d us",
                       (int)(get_currenttime_us() - rr->rr.lsr), rr->rr.lsr, rr->rr.dlsr );
             break;
             
         case RTCP_NACK:
+>>>>>>> d0e83e775b61c141acf0f986720c005b7d0f6a80
             break;
     }
 	//rtcp_nack_packet *nack = (rtcp_nack_packet*)pkt;
@@ -167,7 +191,7 @@ int stream_create(const char*localAddr, unsigned short localRtpPort, int codecTy
     g_vid_stream.rtp_session.out_pt = RTP_PT_H264;
     g_vid_stream.rtp_session.out_extseq = 0;
     g_vid_stream.rto_to_h264_obj = Launch_CPlus(g_vid_stream.fmt_id);
-    status = ringbuffer_create(0, 1, &g_vid_stream.ringbuf);
+    status = ringbuffer_create(0, RESEND_SUPPORT, &g_vid_stream.ringbuf);
     
     status = transport_udp_create(&g_vid_stream.trans, localAddr, localRtpPort, &on_rx_rtp, &on_rx_rtcp);
     if(status<0) {
@@ -191,11 +215,20 @@ char* getVersion(void) {
 }
 
 RTC_API //for ios
+<<<<<<< HEAD
+int vid_stream_create_ios(const char*localAddr, unsigned short localRtpPort, on_rtp_frame frame_cb, int codecType) {
+    int status = 0;
+    memset(&g_vid_stream, 0, sizeof(pjmedia_vid_stream));
+    
+    status = stream_create(localAddr, localRtpPort, codecType);
+    
+=======
 int vid_stream_create_ios(const char*localAddr, unsigned short localRtpPort, rtp_frame_cb frame_cb, int codecType) {
     int status = 0;
 
     status = stream_create(localAddr, localRtpPort, codecType);
     
+>>>>>>> d0e83e775b61c141acf0f986720c005b7d0f6a80
     g_vid_stream.vid_port.rtp_cb = frame_cb;
 
     //fp = fopen(filename, "wb");
@@ -233,6 +266,11 @@ int vid_stream_destroy() {
 	// }
 
 	return result;
+}
+
+int vid_stream_network_callback(on_network_status net_cb) {
+    g_vid_stream.network_cb = net_cb;
+    return  0;
 }
 
 RTC_API
@@ -294,88 +332,6 @@ int packet_and_send_(pjmedia_vid_stream*stream, char* frameBuffer, int frameLen)
 	return result;
 }
 
-static pj_status_t send_rtcp_resend(pjmedia_vid_stream *stream, pj_uint16_t flag)
-{
-    void *sr_rr_pkt = NULL;
-	pj_uint8_t *pkt;
-	int len = 0, max_len;
-	pj_status_t status= PJ_SUCCESS;
-
-	/* Build RTCP RR/SR packet */
-//	  pjmedia_rtcp_build_rtcp(&stream->rtcp, &sr_rr_pkt, &len);
-	//pjmedia_rtcp_build_rtcp_rr(&stream->rtcp, &sr_rr_pkt, &len);
-
-	if((flag & RTCP_SDES_FALG) != 0 || (flag & RTCP_BYTE_FALG) != 0)
-	{ 
-		pkt = (pj_uint8_t*) stream->out_rtcp_pkt;
-		pj_memcpy(pkt, sr_rr_pkt, len);
-		//max_len = stream->out_rtcp_pkt_size;
-	} 
-	else 
-	{
-		pkt = (pj_uint8_t*)sr_rr_pkt;
-		//max_len = len;
-	}
-	
-	log_debug("max_len=%d len=%d", max_len, len);
-
-	/* Build RTCP SDES packet */
-	if((flag & RTCP_SDES_FALG) != 0)
-	{	
-
-	}
-
-/* Build RTCP NACK packet */
-	if((flag & RTCP_NACK_FALG) != 0)
-	{
-		pjmedia_rtcp_nack nack;
-		pj_size_t nack_len;
-		pj_bzero(&nack_len, sizeof(nack_len));
-		// nack.ssrc = pj_htonl(stream->rtcp.peer_ssrc);
-		// nack.base_seq = pj_htons(stream->dec->base_seq);
-		// nack.flag = pj_htons(stream->dec->flag);
-		nack_len = max_len - len;
-
-		if (status != PJ_SUCCESS) 
-		{
-			log_error("Error generating RTCP NACK, status:%d", status);
-		} 
-		else 
-		{
-			len += (int)nack_len;
-		}
-		log_debug("rtcp nack packet, len=%d, nack_len=%d, status=%d", len,nack_len,status);
-	}
-	
-	/* Build RTCP BYE packet */
-	if((flag & RTCP_BYTE_FALG) != 0)
-	{
-
-	}
-    
-	/* add by j33783 20190805 Build RTCP FIR packet */
-	if((flag & RTCP_FIR_FALG) != 0)
-	{
-		// pj_size_t bye_len;
-
-		// bye_len = max_len - len;
-		// status = pjmedia_rtcp_build_fir(&stream->rtcp, pkt+len, &bye_len);
-		// if (status != PJ_SUCCESS) 
-		// {
-		// 	log_error("Error generating RTCP FIR, status:%d", status);
-		// }
-		// else
-		// {
-		// 	len += (int)bye_len;
-		// }	
-		// log_debug("rtcp fir packet, len=%d, max_len=%d,bye_len=%d", len,max_len,bye_len);
-	}
-
-	/* Send! */
-	status = transport_send_rtcp(stream->trans, pkt, len);
-
-	return status;
-}
 
 //-----------------------------------------------------------------------testing-----------------------------------------------------------------------------
 #ifndef __ANDROID__

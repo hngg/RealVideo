@@ -53,6 +53,10 @@ typedef struct pjmedia_vid_codec_param
 
 } pjmedia_vid_codec_param;
 
+#define M 32
+#define N 128
+int splitStr(char *src, char *format, char (*substr)[N]);
+int getSubkeyValue(char *src, char*format, char*subform, char*inKey, char*outValue);
 
 #endif
 

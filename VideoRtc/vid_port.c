@@ -48,7 +48,7 @@ static  void  worker_thread_jbuf(void *arg)
                     if(port->decoder)
                         mediacodec_decoder_render(port->decoder, (uint8_t*)stream->rtp_unpack_buf, frame_len);
                 #else
-                    if(port->rtp_cb)
+                    if(port->rtp_cb) //config at vid_stream_create_ios
                         port->rtp_cb((char*)stream->rtp_unpack_buf, frame_len);
                 #endif
                     

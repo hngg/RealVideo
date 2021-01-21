@@ -102,10 +102,10 @@ typedef union pj_sockaddr
 
 typedef struct pjmedia_vid_buf
 {
-		void		   *buf; 	/**< resend output buffer.			*/
-		pj_uint16_t	   *pkt_len;  /*resend output pkt len except the head*/
-		pj_uint16_t	   *resend_times;  /*resend output pkt len except the head*/
-		pj_uint16_t	   buf_size; /*buffer size*/ 
+		void		   *buf; 	        /**< resend output buffer.			*/
+		pj_uint16_t	   *pkt_len;        /*resend output pkt len except the head*/
+		pj_uint16_t	   *resend_times;   /*resend output pkt len except the head*/
+		pj_uint16_t	   buf_size;        /*buffer size*/
 } pjmedia_vid_buf;
 
 typedef struct trans_channel
@@ -153,7 +153,6 @@ struct transport_udp
 
 typedef struct transport_udp transport_udp;
 
-
 //create and destroy
 pj_status_t transport_udp_create(struct transport_udp** udpout, const char *addr, unsigned short port,
                                     void (*rtp_cb)(void*, void*, pj_ssize_t),
@@ -172,12 +171,24 @@ pj_status_t transport_udp_stop(struct transport_udp* udp);
 pj_status_t transport_priority_send_rtp( transport_udp* udp, const void *rtpPacket, pj_uint32_t size);
 pj_status_t transport_send_rtcp(struct transport_udp* udp, const void *rtpPacket, pj_uint32_t size);
 
+<<<<<<< HEAD
+pj_status_t resend_losted_package( struct transport_udp* udp, unsigned begin_seq, unsigned count);
+
+
+//pj_status_t transport_save_packet(struct transport_udp* udp, const void *rtpPacket, pj_uint32_t size);
+//pj_status_t transport_send_rtp_seq(struct transport_udp* udp, const void *rtpPacket, pj_size_t size, unsigned short extSeq);
+
+
+//pj_status_t transport_reset_socket(struct transport_udp* udp);
+//pj_status_t transport_reset_rtp_socket(struct transport_udp*  udp);
+=======
 pj_status_t transport_save_packet(struct transport_udp* udp, const void *rtpPacket, pj_uint32_t size);
 pj_status_t transport_send_rtp_seq(struct transport_udp* udp, const void *rtpPacket, pj_size_t size, unsigned short extSeq);
 
 
 pj_status_t transport_reset_socket(struct transport_udp* udp);
 pj_status_t transport_reset_rtp_socket(struct transport_udp*  udp);
+>>>>>>> d0e83e775b61c141acf0f986720c005b7d0f6a80
 
 #endif
 

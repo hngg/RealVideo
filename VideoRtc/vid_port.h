@@ -18,7 +18,7 @@ struct pjmedia_vid_port
     MediaCodecDecoder *decoder;
     #endif
     
-    rtp_frame_cb rtp_cb;
+    on_rtp_frame rtp_cb;
 };
 
 typedef struct pjmedia_vid_port pjmedia_vid_port;

@@ -1,4 +1,5 @@
 #include "utils.h"
+#include <stdio.h>
 
 long get_currenttime_us() {
 	struct timeval tv_cur;
@@ -51,4 +52,71 @@ pj_uint16_t pj_ntohs(pj_uint16_t netshort)
 pj_uint16_t pj_htons(pj_uint16_t netshort)
 {
     return htons(netshort);
+}
+
+
+
+/*
+    sample:src = "a=001"; char mainType[M][N] = {0};
+    splitStr(src, "=", mainType);mainType[0] = "a"
+
+    successful:return the split count, else return 0
+*/
+int splitStr(char *src, char *format, char (*substr)[N])
+{
+    char * begin;
+    char * pos;
+    int substrLen, count = 0;
+    int formatLen = (int)strlen(format);
+
+    for(count=0, begin=src; ( pos = (char*)strstr(begin, format) ) != NULL;)
+    {
+        substrLen = (int)(pos - begin);
+        strncpy(substr[count], begin, substrLen);
+        begin = pos + formatLen;
+        count++;
+        //should not out of memory
+        if(count+1>=M) {
+            printf("error:out of max array.\n");
+            break;
+        }
+    }
+    substrLen = (int)strlen(begin);
+    if(substrLen > 0){
+        strncpy(substr[count], begin, substrLen);
+        count++;
+    }
+    return count;
+}
+
+/*
+    sameple:
+    src = "a=001&b=002&c=003"; char outValue[100] = {0};
+    getSubkeyValue(src, "&", "=", "a", outValue); //then the outValue is 001
+ 
+    successful:return 1 else return 0
+*/
+int getSubkeyValue(char *src, char*format, char*subform, char*inKey, char*outValue)
+{
+    int result = 0;
+    char mainType[M][N] = {0};
+    
+    int i = splitStr(src, format, mainType);
+    for(int j=0; j<i; j++)
+    {
+        //printf("%s\n", mainType[j]);
+        char subType[M][N] = {0};
+        int m = splitStr(mainType[j], subform, subType);
+        if(m==2)
+        {
+            if(!strcmp(subType[0], inKey))
+            {
+                strcpy(outValue, subType[1]);
+                result = 1;
+                break;
+            }
+            //printf("key:%s value:%s\n", subType[0], subType[1]);
+        }
+    }
+    return result;
 }

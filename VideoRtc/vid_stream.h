@@ -25,27 +25,28 @@
 #define RTCP_NACK_FALG (RTCP_SDES_FALG << 1)
 #define RTCP_BYTE_FALG (RTCP_NACK_FALG << 1)
 #define RTCP_FIR_FALG (RTCP_BYTE_FALG << 1)   /* add by j33783 20190805 */
-#define RTP_PACKET_SEQ_MAP_MAX 17
-#define RTCP_RESEND_ARR_MAX_NUM 64  
-#define RESEND_HEARTBREAK_TYPE 306
-#define RESEND_HEARTBREAK_MAX_LEN 32
-#define HEARTBREAK_RTP_PT 127
-#define RESEND_BREAKBEART_TIMES 3
-#define TERMINAL_TYPE 5
-#define RESEND_TIMES_MAX 2
-#define RESEND_REQ_BASESEQ_BUFF_LEN 1024
-//#endif
 
-#if defined(PJMEDIA_VIDEO_RESEND_OPTIMIZE)
-#define RESEND_BUFF_SIZE  1024
-#endif
+#define RTP_PACKET_SEQ_MAP_MAX 17
+#define HEARTBREAK_RTP_PT 127
+#define TERMINAL_TYPE 5
+
+
+#define RESEND_SUPPORT  1
+//#define RESEND_ARR_MAX_NUM  64
+//#define RESEND_HEARTBREAK_TYPE 306
+//#define RESEND_HEARTBREAK_MAX_LEN 32
+//#define RESEND_BREAKBEART_TIMES 3
+//#define RESEND_TIMES_MAX 2
+//#define RESEND_REQ_BASESEQ_BUFF_LEN 1024
+//#define RESEND_BUFF_SIZE  1024
+
 
 //#ifdef PJMEDIA_VIDEO_JBUF_OPTIMIZE
-#define DISCARD_RESEND_NUM_MAX 30
-#define DEC_FRAME_ARR_MAX 20
-#define FRAME_LEN_MAX 720*1280*3/2
-#define DELAY_FRAME_NUM  5
-#define DELAY_FRAME_NUM_MAX  10
+#define DISCARD_RESEND_NUM_MAX  30
+#define DEC_FRAME_ARR_MAX       20
+#define FRAME_LEN_MAX           720*1280*3/2
+#define DELAY_FRAME_NUM         5
+#define DELAY_FRAME_NUM_MAX     10
 #define BEGIN_RENDER_FRAME_IDX  3
 //#endif
 
@@ -68,6 +69,7 @@ struct pjmedia_vid_stream
     void* rtp_unpack_buf;
     void* rto_to_h264_obj;
     int                     codecType;
+    on_network_status       network_cb;
 
     //unsigned		        out_rtcp_pkt_size;
     char		            out_rtcp_pkt[PJMEDIA_MAX_MTU];  /**< Outgoing RTCP packet.	    */

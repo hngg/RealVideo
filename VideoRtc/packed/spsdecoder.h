@@ -9,7 +9,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <malloc.h>
+
 #define SPS_MAX (32)
+
 typedef struct decoder_sys_t
 {
 	// Useful values of the Sequence Parameter Set 

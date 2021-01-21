@@ -77,7 +77,7 @@ typedef enum unpack_frame_status
 } unpack_frame_status, EN_UNPACK_FRAME_STATUS;
 
 
-pjmedia_vid_rtp_unpack* pjmedia_unpack_alloc_frame();
+pjmedia_vid_rtp_unpack* pjmedia_unpack_alloc_frame(void);
 void pjmedia_unpack_free_frame(pjmedia_vid_rtp_unpack* pUnpack);
 void pjmedia_unpack_reset_buf(pjmedia_vid_rtp_unpack* pUnpack);
 void pjmedia_unpack_reset_frame(pjmedia_vid_rtp_unpack* pUnpack);
@@ -85,6 +85,9 @@ unpack_frame_status pjmedia_unpack_rtp_h264(unsigned char* pRtpPkt, unsigned int
 
 void test_pjmedia_h264_pack(unsigned char* pRtpPkt, unsigned int uRtpLen);
 
+//inner function
+int pjmedia_unpack_check_frame(pjmedia_vid_rtp_unpack* pUnpack);
+int pjmedia_unpack_check_h265_nal(rtp_packet_info* pkginfo, pjmedia_vid_rtp_unpack* pUnpack);
 
 #pragma pack(pop)
 #endif

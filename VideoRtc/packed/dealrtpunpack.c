@@ -12,26 +12,12 @@
 
 static const char* pjmedia_unpack_get_frame_name(int iFrmType)
 {
-      switch(iFrmType)
-      {
-         case 1:
-         {
-              return "I";
-         }
-         case 2:
-         {
-              return "P";
-         }
-         case 3:
-         {
-              return "B";
-         }
-         default:
-         {
-              return "UNKONW";
-         }
+      switch(iFrmType) {
+         case 1: return "I";
+         case 2: return "P";
+         case 3: return "B";
+         default: return "UNKONW";
       }
-
       return "UNKONW";
 }
 
@@ -42,14 +28,14 @@ void pjmedia_unpack_reset_buf(pjmedia_vid_rtp_unpack* pUnpack)
          return;
      }
 
-     pUnpack->iFrameType = 0;
+     pUnpack->iFrameType    = 0;
      memset(pUnpack->pFrameBuf, 0, sizeof(H264_FRAME_MAX_SIZE));
-     pUnpack->uFrameLen = 0;
-     pUnpack->usRtpCnt = 0;
-     pUnpack->usRtpESeq = -1;
-     pUnpack->usRtpSSeq = -1;
-     pUnpack->bLenom = 0;
-     pUnpack->uTimeStamp = 0;
+     pUnpack->uFrameLen     = 0;
+     pUnpack->usRtpCnt      = 0;
+     pUnpack->usRtpESeq     = -1;
+     pUnpack->usRtpSSeq     = -1;
+     pUnpack->bLenom        = 0;
+     pUnpack->uTimeStamp    = 0;
 }
 
 void pjmedia_unpack_reset_frame(pjmedia_vid_rtp_unpack* pUnpack)
@@ -86,7 +72,6 @@ pjmedia_vid_rtp_unpack* pjmedia_unpack_alloc_frame()
         log_error("malloc pjmedia_vid_rtp_unpack failure.");
         return NULL;
     }
-
 
     pUnpack->pFrameBuf = (unsigned char*)malloc(H264_FRAME_MAX_SIZE);
 
@@ -393,7 +378,7 @@ static int pjmedia_unpack_check_nal(rtp_packet_info* pkginfo, pjmedia_vid_rtp_un
       }
 
       switch(pkginfo->ucNalType)
-     {
+      {
         case 1:  /* P slice */
         {
                 if(pkginfo->pPayloadBuf[1]&0x80) 
@@ -590,7 +575,202 @@ static int pjmedia_unpack_check_nal(rtp_packet_info* pkginfo, pjmedia_vid_rtp_un
     return 0;
 }
 
-static int pjmedia_unpack_check_h265_nal(rtp_packet_info* pkginfo, pjmedia_vid_rtp_unpack* pUnpack)
+unpack_frame_status pjmedia_unpack_rtp_h264(unsigned char* pRtpPkt, unsigned int uRtpLen,  pjmedia_vid_rtp_unpack* pUnpack)
+{
+      rtp_packet_info pkginfo;
+      int status = -1;
+      unpack_frame_status unpack_status = EN_UNPACK_FRAME_ERROR;
+      
+      
+      if(!pRtpPkt || uRtpLen<= RTP_BASE_HEADLEN || !pUnpack)
+      {
+            log_error("invalid parameter.");
+            return EN_UNPACK_FRAME_ERROR;
+      }
+      
+     status = pjmedia_parse_rtp_packet(pRtpPkt,uRtpLen,&pkginfo, pUnpack->nCodecID);
+
+     if(0 != status)
+    {
+          log_error("parse rtp packet failure.");
+          return unpack_status;
+    }
+     
+    log_debug("recv rtp, pt:%u, seq:%u, m:%d, ts:%u, ssrc:%d, naltype:%d, len:%d", pkginfo.ucPayloadType, pkginfo.usSeq,
+                             pkginfo.ucMarker, pkginfo.uTimeStamp, pkginfo.uSSRC,pkginfo.ucNalType, pkginfo.usPayloadLen);
+
+    if(PJMEDIA_FORMAT_H264 == pUnpack->nCodecID)
+    {
+        pjmedia_unpack_check_nal(&pkginfo, pUnpack);
+
+        status = pjmedia_unpack_h264(pkginfo.pPayloadBuf, pkginfo.usPayloadLen, pkginfo.ucNalType,
+                                                        pUnpack->pFrameBuf, H264_FRAME_MAX_SIZE, &pUnpack->uFrameLen);
+        if(0 != status)
+        {
+            log_error("unpack h264 failure.");
+            pjmedia_unpack_reset_frame(pUnpack);
+            return unpack_status;
+        }
+
+        if(6 <= pkginfo.ucNalType && 8 >= pkginfo.ucNalType)
+        {
+             unpack_status = EN_UNPACK_FRAME_START;
+        }
+        else
+        {
+             pUnpack->usRtpCnt++;
+        }
+    }
+    else
+    {
+         pjmedia_unpack_check_h265_nal(&pkginfo, pUnpack);
+         status = pjmeida_h265_unpacketize(pRtpPkt, uRtpLen, pUnpack->pFrameBuf, (int*)&pUnpack->uFrameLen);
+         if(status < 0)
+         {
+            log_error("unpack h265 failure, status:%d", status);
+            pjmedia_unpack_reset_frame(pUnpack);
+            return unpack_status;
+         }
+         else if(status == 0)
+         {
+              
+         }
+         else
+         {
+                pUnpack->uFrameLen = status;
+         }
+         
+
+        if(32 == pkginfo.ucNalType || 33 == pkginfo.ucNalType
+           || 34 == pkginfo.ucNalType || 39 == pkginfo.ucNalType)
+        {
+             unpack_status = EN_UNPACK_FRAME_START;
+        }
+        else
+        {
+             pUnpack->usRtpCnt++;
+        }
+    }
+   
+    log_debug("pack frame, buf:%p, len:%d, type:%s, rtp cnt:%d, start:%d, end:%d, vps:%d, sps:%d, pps:%d, idr:%d",
+                     pUnpack->pFrameBuf, pUnpack->uFrameLen, pjmedia_unpack_get_frame_name(pUnpack->iFrameType),
+                     pUnpack->usRtpCnt, pUnpack->usRtpSSeq, pUnpack->usRtpESeq,  pUnpack->bVPS, pUnpack->bSPS, pUnpack->bPPS, pUnpack->bIDR);
+
+    if(1 == pUnpack->iFrameType) /* check I frame */
+    {
+         if(pkginfo.ucMarker)
+         {
+             status = pjmedia_unpack_check_frame(pUnpack);
+             if(0 != status)
+             {
+                  pjmedia_unpack_reset_frame(pUnpack);
+                  unpack_status = EN_UNPACK_FRAME_FAILURE;
+                  return unpack_status;
+             }
+             else
+             {
+                    pUnpack->bIDR = 1;
+             }
+              unpack_status =  EN_UNPACK_FRAME_FINISH;
+         }
+         else
+         {
+              unpack_status =  EN_UNPACK_FRAME_MIDDLE;
+         }
+    }
+
+     if(2 == pUnpack->iFrameType || 3 ==pUnpack->iFrameType ) /* check P/B frame */
+     {
+            /* add by j33783 20190731 兼容硬编码输出存在连帧打包错误的现象 */
+           //if(pkginfo.pPayloadBuf[1]&0x40)
+           if(pkginfo.ucMarker)
+           {
+                    pUnpack->usRtpESeq = pkginfo.usSeq;
+                    //pkginfo.ucMarker = 1;
+           }
+            
+          if(pkginfo.ucMarker)
+          {
+              status = pjmedia_unpack_check_frame(pUnpack);
+              if(0 != status)
+              {
+                  //pjmedia_unpack_reset_buf(pUnpack);
+                  pjmedia_unpack_reset_frame(pUnpack);
+                  unpack_status = EN_UNPACK_FRAME_FAILURE;
+                  return unpack_status;
+              }
+
+              if(!pUnpack->bIDR)
+              {
+                   //pjmedia_unpack_reset_buf(pUnpack);
+                  pjmedia_unpack_reset_frame(pUnpack);
+                  unpack_status = EN_UNPACK_FRAME_FAILURE;
+                  return unpack_status;
+              }
+              unpack_status =  EN_UNPACK_FRAME_FINISH;
+          }
+          else
+          {
+               unpack_status =  EN_UNPACK_FRAME_MIDDLE;
+          }
+    }
+
+    if(EN_UNPACK_FRAME_FINISH == unpack_status)
+    {
+           memcpy(pUnpack->stPreFrame.pFrameBuf, pUnpack->pFrameBuf, pUnpack->uFrameLen);
+           pUnpack->stPreFrame.uFrameLen = pUnpack->uFrameLen;
+
+           log_debug("video frame unpack, frame size=%d, type:%d, start seq:%d, end seq:%d, cnt:%d, sps:%d, pps:%d, idr:%d",
+                                pUnpack->uFrameLen, pUnpack->iFrameType, pUnpack->usRtpSSeq, pUnpack->usRtpESeq, pUnpack->usRtpCnt,
+                                pUnpack->bSPS, pUnpack->bPPS, pUnpack->bIDR);
+           
+           pjmedia_unpack_reset_buf(pUnpack);
+    }
+
+    return unpack_status;
+    
+}
+
+
+
+
+void test_pjmedia_h264_pack(unsigned char* pRtpPkt, unsigned int uRtpLen)
+{
+     static pjmedia_vid_rtp_unpack* pUnpack = NULL;
+     static FILE* fp = NULL;
+     unpack_frame_status status;
+
+     if(!pUnpack)
+    {
+        pUnpack = pjmedia_unpack_alloc_frame();
+    }
+
+    if(!fp)
+    {
+        fp = fopen("/sdcard/test.h264", "wb");
+    }
+
+    if(pUnpack)
+    {
+         status = pjmedia_unpack_rtp_h264(pRtpPkt, uRtpLen, pUnpack);
+         if(EN_UNPACK_FRAME_FINISH == status)
+         {
+             log_debug("finish a h264 frame unpack, frame size=%d, type:%d, start seq:%d, end seq:%d, cnt:%d, sps:%d, pps:%d, idr:%d",
+                pUnpack->uFrameLen, pUnpack->iFrameType, pUnpack->usRtpSSeq, pUnpack->usRtpESeq, pUnpack->usRtpCnt,
+                pUnpack->bSPS, pUnpack->bPPS, pUnpack->bIDR);
+             if(fp)
+             {
+                fwrite(pUnpack->pFrameBuf, 1, pUnpack->uFrameLen, fp);
+             }
+             pjmedia_unpack_reset_buf(pUnpack);
+         }
+    }
+     
+}
+
+////////////////////////////////////////////////////////////////h265//////////////////////////////////////////////////////////////////////////
+
+int pjmedia_unpack_check_h265_nal(rtp_packet_info* pkginfo, pjmedia_vid_rtp_unpack* pUnpack)
 {
      if(!pkginfo || !pUnpack)
      {
@@ -789,7 +969,7 @@ static int pjmedia_unpack_check_h265_nal(rtp_packet_info* pkginfo, pjmedia_vid_r
     return 0;
 }
 
-static int pjmedia_unpack_check_frame(pjmedia_vid_rtp_unpack* pUnpack)
+int pjmedia_unpack_check_frame(pjmedia_vid_rtp_unpack* pUnpack)
 {
       unsigned short  usSeqGap = 0;
       if(!pUnpack)
@@ -838,198 +1018,7 @@ static int pjmedia_unpack_check_frame(pjmedia_vid_rtp_unpack* pUnpack)
       return 0;   
 }
 
-unpack_frame_status pjmedia_unpack_rtp_h264(unsigned char* pRtpPkt, unsigned int uRtpLen,  pjmedia_vid_rtp_unpack* pUnpack)
-{
-      rtp_packet_info pkginfo;
-      int status = -1;
-      unpack_frame_status unpack_status = EN_UNPACK_FRAME_ERROR;
-      
-      
-      if(!pRtpPkt || uRtpLen<= RTP_BASE_HEADLEN || !pUnpack)
-      {
-            log_error("invalid parameter.");
-            return EN_UNPACK_FRAME_ERROR;
-      }      
-      
-     status = pjmedia_parse_rtp_packet(pRtpPkt,uRtpLen,&pkginfo, pUnpack->nCodecID);
 
-     if(0 != status)
-    {
-          log_error("parse rtp packet failure.");
-          return unpack_status;
-    }
-     
-    log_debug("recv rtp, pt:%u, seq:%u, m:%d, ts:%u, ssrc:%d, naltype:%d, len:%d", pkginfo.ucPayloadType, pkginfo.usSeq,
-                             pkginfo.ucMarker, pkginfo.uTimeStamp, pkginfo.uSSRC,pkginfo.ucNalType, pkginfo.usPayloadLen);
-
-    if(PJMEDIA_FORMAT_H264 == pUnpack->nCodecID)
-    {
-        pjmedia_unpack_check_nal(&pkginfo, pUnpack);
-
-        status = pjmedia_unpack_h264(pkginfo.pPayloadBuf, pkginfo.usPayloadLen, pkginfo.ucNalType, 
-                                                        pUnpack->pFrameBuf, H264_FRAME_MAX_SIZE, &pUnpack->uFrameLen);
-        if(0 != status)
-        {
-            log_error("unpack h264 failure.");
-            pjmedia_unpack_reset_frame(pUnpack);
-            return unpack_status;
-        }  
-
-        if(6 <= pkginfo.ucNalType && 8 >= pkginfo.ucNalType)
-        {
-             unpack_status = EN_UNPACK_FRAME_START;
-        }
-        else
-        {
-             pUnpack->usRtpCnt++;
-        }
-    }
-    else
-    {
-         pjmedia_unpack_check_h265_nal(&pkginfo, pUnpack);
-         status = pjmeida_h265_unpacketize(pRtpPkt, uRtpLen, pUnpack->pFrameBuf, (int*)&pUnpack->uFrameLen);
-         if(status < 0)
-         {
-            log_error("unpack h265 failure, status:%d", status);
-            pjmedia_unpack_reset_frame(pUnpack);
-            return unpack_status;
-         }
-         else if(status == 0)
-         {
-              
-         }
-         else
-         {
-                pUnpack->uFrameLen = status;
-         }
-         
-
-        if(32 == pkginfo.ucNalType || 33 == pkginfo.ucNalType 
-           || 34 == pkginfo.ucNalType || 39 == pkginfo.ucNalType) 
-        {
-             unpack_status = EN_UNPACK_FRAME_START;
-        }
-        else
-        {
-             pUnpack->usRtpCnt++;
-        }
-    }
-   
-    log_debug("pack frame, buf:%p, len:%d, type:%s, rtp cnt:%d, start:%d, end:%d, vps:%d, sps:%d, pps:%d, idr:%d",
-                     pUnpack->pFrameBuf, pUnpack->uFrameLen, pjmedia_unpack_get_frame_name(pUnpack->iFrameType), 
-                     pUnpack->usRtpCnt, pUnpack->usRtpSSeq, pUnpack->usRtpESeq,  pUnpack->bVPS, pUnpack->bSPS, pUnpack->bPPS, pUnpack->bIDR);
-
-    if(1 == pUnpack->iFrameType) /* check I frame */
-    {
-         if(pkginfo.ucMarker)
-         {
-             status = pjmedia_unpack_check_frame(pUnpack);
-             if(0 != status)
-             {
-                  pjmedia_unpack_reset_frame(pUnpack);
-                  unpack_status = EN_UNPACK_FRAME_FAILURE;
-                  return unpack_status;
-             }
-             else
-             {
-                    pUnpack->bIDR = 1;
-             }
-              unpack_status =  EN_UNPACK_FRAME_FINISH;
-         }
-         else
-         {
-              unpack_status =  EN_UNPACK_FRAME_MIDDLE;
-         }
-    }
-
-     if(2 == pUnpack->iFrameType || 3 ==pUnpack->iFrameType ) /* check P/B frame */
-     {
-            /* add by j33783 20190731 兼容硬编码输出存在连帧打包错误的现象 */
-           //if(pkginfo.pPayloadBuf[1]&0x40)
-           if(pkginfo.ucMarker)
-           {                 
-                    pUnpack->usRtpESeq = pkginfo.usSeq;  
-                    //pkginfo.ucMarker = 1;
-           }
-            
-          if(pkginfo.ucMarker)
-          {
-              status = pjmedia_unpack_check_frame(pUnpack);
-              if(0 != status)
-              {
-                  //pjmedia_unpack_reset_buf(pUnpack);
-                  pjmedia_unpack_reset_frame(pUnpack);
-                  unpack_status = EN_UNPACK_FRAME_FAILURE;
-                  return unpack_status;
-              }
-
-              if(!pUnpack->bIDR)
-              {
-                   //pjmedia_unpack_reset_buf(pUnpack);
-                  pjmedia_unpack_reset_frame(pUnpack);
-                  unpack_status = EN_UNPACK_FRAME_FAILURE;
-                  return unpack_status;
-              }
-              unpack_status =  EN_UNPACK_FRAME_FINISH;
-          }
-          else
-          {
-               unpack_status =  EN_UNPACK_FRAME_MIDDLE;
-          }
-    }
-
-    if(EN_UNPACK_FRAME_FINISH == unpack_status)
-    {
-           memcpy(pUnpack->stPreFrame.pFrameBuf, pUnpack->pFrameBuf, pUnpack->uFrameLen);
-           pUnpack->stPreFrame.uFrameLen = pUnpack->uFrameLen;
-
-           log_debug("video frame unpack, frame size=%d, type:%d, start seq:%d, end seq:%d, cnt:%d, sps:%d, pps:%d, idr:%d",
-                                pUnpack->uFrameLen, pUnpack->iFrameType, pUnpack->usRtpSSeq, pUnpack->usRtpESeq, pUnpack->usRtpCnt, 
-                                pUnpack->bSPS, pUnpack->bPPS, pUnpack->bIDR);
-           
-           pjmedia_unpack_reset_buf(pUnpack);
-    }
-
-    return unpack_status;
-    
-}
-
-
-
-
-void test_pjmedia_h264_pack(unsigned char* pRtpPkt, unsigned int uRtpLen)
-{
-     static pjmedia_vid_rtp_unpack* pUnpack = NULL;
-     static FILE* fp = NULL;
-     unpack_frame_status status;
-
-     if(!pUnpack)
-    {
-        pUnpack = pjmedia_unpack_alloc_frame();
-    }
-
-    if(!fp)
-    {
-        fp = fopen("/sdcard/test.h264", "wb");
-    }
-
-    if(pUnpack)
-    {
-         status = pjmedia_unpack_rtp_h264(pRtpPkt, uRtpLen, pUnpack);
-         if(EN_UNPACK_FRAME_FINISH == status)
-         {
-             log_debug("finish a h264 frame unpack, frame size=%d, type:%d, start seq:%d, end seq:%d, cnt:%d, sps:%d, pps:%d, idr:%d",
-                pUnpack->uFrameLen, pUnpack->iFrameType, pUnpack->usRtpSSeq, pUnpack->usRtpESeq, pUnpack->usRtpCnt, 
-                pUnpack->bSPS, pUnpack->bPPS, pUnpack->bIDR);
-             if(fp)
-             {
-                fwrite(pUnpack->pFrameBuf, 1, pUnpack->uFrameLen, fp);
-             }
-             pjmedia_unpack_reset_buf(pUnpack);
-         }
-    }
-     
-}
 
 
 

@@ -158,9 +158,10 @@ static void worker_rtcp_recvfrom(void *arg)
 
 pjmedia_vid_buf *create_resend_buf() {
 	pjmedia_vid_buf *pVidbuf = (pjmedia_vid_buf*)malloc(sizeof(pjmedia_vid_buf));
-	pVidbuf->buf_size = RESEND_BUFF_NUMBER;//the number of resend package number
 	pVidbuf->buf = malloc(RESEND_BUFF_NUMBER*PJMEDIA_MAX_MTU);
 	pVidbuf->pkt_len = malloc(RESEND_BUFF_NUMBER*sizeof(pj_uint16_t));
+    
+    pVidbuf->buf_size = RESEND_BUFF_NUMBER;//the number of resend package number
 
 	return pVidbuf;
 }
@@ -181,12 +182,57 @@ void release_resend_buf(pjmedia_vid_buf*resend_buf) {
 void resend_save_rtp( pjmedia_vid_buf *vidBuf, pj_uint16_t extSeq, char*sendBuf, pj_uint16_t pkt_len){
 	if(!vidBuf || !sendBuf)
 		return ;
-	pj_uint16_t index;  
+    
+	pj_uint16_t index;
 	index = extSeq % vidBuf->buf_size;
 	pj_memcpy(vidBuf->buf + index * PJMEDIA_MAX_MTU, sendBuf, pkt_len);//pkt_len is smaller than PJMEDIA_MAX_MTU
 	vidBuf->pkt_len[index] = pkt_len;
 }
 
+<<<<<<< HEAD
+pj_status_t resend_losted_package( struct transport_udp* udp, unsigned begin_seq, unsigned count)
+{
+    ssize_t status = -1;
+    int i = 0, seq = begin_seq;
+    if(!udp || count >= RESEND_BUFF_NUMBER)
+        return -1;
+    
+    socklen_t addr_len =sizeof(struct sockaddr_in);
+    pjmedia_vid_buf *resendBuf = udp->resend;
+    struct trans_channel *rt_channel = &udp->rtp_chanel;
+    for(; i<count; i++)
+    {
+        pj_uint16_t index = seq++ % resendBuf->buf_size;
+        void* sendPos = resendBuf->buf + index * PJMEDIA_MAX_MTU;
+        int sendLen   =  resendBuf->pkt_len[index];
+        
+        status = sendto(rt_channel->sockfd, sendPos, sendLen, 0,
+                        (const struct sockaddr *)&rt_channel->rem_addr, addr_len);
+        if(status < 0) {
+            switch(errno)
+            {
+                case EAGAIN:
+                    if(packet_list_check_overflow(rt_channel->send_list.list_send_size,
+                                                  rt_channel->send_list.list_write_size, RTP_LIST_MAX_SIZE))
+                    {
+                        packet_list_reset(&rt_channel->send_list);
+                        log_debug("---reset---\n");
+                    }
+                    packet_list_node_add(&rt_channel->send_list, sendPos, sendLen);
+                    break;
+            }
+            log_error("send_priority resend failed sockid:%d seq:%d errno:%d",
+                      rt_channel->sockfd, seq-1, errno);
+        }
+        else
+            log_debug("send_priority resend sockid:%d seq:%d", rt_channel->sockfd, seq-1);
+    }
+
+    return (int)status;
+}
+
+=======
+>>>>>>> d0e83e775b61c141acf0f986720c005b7d0f6a80
 pj_status_t transport_udp_create( struct transport_udp** udpout, const char *localAddr, unsigned short rtpPort,
 									void (*rtp_cb)(void*, void*, pj_ssize_t),
 				                    void (*rtcp_cb)(void*, void*, pj_ssize_t))
@@ -288,7 +334,12 @@ pj_status_t transport_udp_destroy( struct transport_udp* udp) {
     packet_list_destroy(&udp->rtp_chanel.send_list);
     
 	//release resend
+<<<<<<< HEAD
+    if(udp->resend)
+        release_resend_buf(udp->resend);
+=======
 	release_resend_buf(udp->resend);
+>>>>>>> d0e83e775b61c141acf0f986720c005b7d0f6a80
 
 	pthread_mutex_destroy(&udp->rtp_cache_mutex);
     pthread_mutex_destroy(&udp->udp_socket_mutex);
@@ -320,6 +371,17 @@ pj_status_t transport_udp_start( struct transport_udp* udp, const char*remoteAdd
     
     memset(&(udp->rtp_chanel.recv_tid), 0, sizeof(pj_thread_t));
     memset(&(udp->rtcp_chanel.recv_tid), 0, sizeof(pj_thread_t));
+<<<<<<< HEAD
+=======
+
+    pj_thread_create("rtp_recv", (thread_proc *)&worker_rtp_recvfrom, udp, 0, 0, &udp->rtp_chanel.recv_tid);
+    pj_thread_create("rtcp_recv", (thread_proc *)&worker_rtcp_recvfrom, udp, 0, 0, &udp->rtcp_chanel.recv_tid);
+    if (status != 0) {
+        return status;
+    }
+    
+	udp->attached = PJ_TRUE;
+>>>>>>> d0e83e775b61c141acf0f986720c005b7d0f6a80
 
     pj_thread_create("rtp_recv", (thread_proc *)&worker_rtp_recvfrom, udp, 0, 0, &udp->rtp_chanel.recv_tid);
     pj_thread_create("rtcp_recv", (thread_proc *)&worker_rtcp_recvfrom, udp, 0, 0, &udp->rtcp_chanel.recv_tid);
@@ -329,9 +391,15 @@ pj_status_t transport_udp_start( struct transport_udp* udp, const char*remoteAdd
     
 	udp->attached = PJ_TRUE;
 
+<<<<<<< HEAD
     return status;
 }
 
+pj_status_t transport_udp_stop( struct transport_udp* udp) {
+    pj_status_t status = 0;
+	udp->rtp_chanel.recv_tid.thread_quit 	= 1;
+	udp->rtcp_chanel.recv_tid.thread_quit 	= 1;
+=======
 pj_status_t transport_udp_stop( struct transport_udp* udp) {
     pj_status_t status = 0;
 	udp->rtp_chanel.recv_tid.thread_quit 	= 1;
@@ -356,6 +424,7 @@ pj_status_t transport_save_packet( struct transport_udp*udp, const void *rtpPack
     packet_list_node_add(&rtp_channel->send_list, rtpPacket, size);
     //pthread_mutex_unlock(&tp->rtp_cache_mutex);
     
+>>>>>>> d0e83e775b61c141acf0f986720c005b7d0f6a80
     return status;
 }
 
@@ -373,26 +442,66 @@ ssize_t transport_channel_send(struct trans_channel *rt_channel, void *rtpPacket
             //mutex_lock(udp->udp_socket_mutex);
             status = sendto(rt_channel->sockfd, rtp_node->rtp_buf, send_len, 0,
                             (const struct sockaddr *)&rt_channel->rem_addr , addr_len);
+<<<<<<< HEAD
+            head = (pjmedia_rtp_hdr*)(rtp_node->rtp_buf);
+            if(status<0) {
+=======
             if(status<0) {
                 head = (pjmedia_rtp_hdr*)(rtp_node->rtp_buf);
+>>>>>>> d0e83e775b61c141acf0f986720c005b7d0f6a80
                 log_error("sendto rtp packet:[%u] failure, send_len:%d rtp seq:[%u], errno:[%d] errstr:%s", rt_channel->send_list.list_send_size,  send_len, pj_ntohs(head->seq), errno, strerror(errno));
             }
             //else continue;
-            log_debug("sendto packet node size:%d", send_len);
+            log_debug("sendto list packet size:%d seq:%d", send_len, pj_ntohs(head->seq));
         }else
         {
-            log_error("sendto packet send_len is:%d", send_len);
+            log_error("sendto packet send_len is:%d seq:%d", send_len, pj_ntohs(head->seq));
         }
         packet_list_node_offset(&rt_channel->send_list);//remove current sending packet
+<<<<<<< HEAD
+        
+        usleep(500);
+        rtp_node = rt_channel->send_list.list_current_send;//next sending packet
+        
+=======
         
         usleep(1000);
         rtp_node = rt_channel->send_list.list_current_send;//next sending packet
         
+>>>>>>> d0e83e775b61c141acf0f986720c005b7d0f6a80
     }//check nodes done
     
-    if(status == EAGAIN)
-        return (pj_status_t)status;
+//    if(status == EAGAIN)
+//        return (pj_status_t)status;
     
+    //pthread_mutex_lock(&udp->udp_socket_mutex);
+    
+<<<<<<< HEAD
+    head = (pjmedia_rtp_hdr*)(rtpPacket);
+//    if(pj_ntohs(head->seq)!=0)
+//    if((pj_ntohs(head->seq)%10)==0 || (pj_ntohs(head->seq)%10)==1 || (pj_ntohs(head->seq)%10)==2)
+//        return size;
+    
+    status = sendto(rt_channel->sockfd, rtpPacket, size, 0,
+                    (const struct sockaddr *)&rt_channel->rem_addr, addr_len);
+    if(status < 0) {
+        log_error("send_priority sendto failed sockid:%d seq:%d errno:%d", rt_channel->sockfd, pj_ntohs(head->seq), errno);
+        switch(errno)
+        {
+            case EAGAIN:
+                if(packet_list_check_overflow(rt_channel->send_list.list_send_size,
+                                              rt_channel->send_list.list_write_size, RTP_LIST_MAX_SIZE))
+                {
+                    packet_list_reset(&rt_channel->send_list);
+                    log_debug("---reset---\n");
+                }
+                
+                packet_list_node_add(&rt_channel->send_list, rtpPacket, size);
+                log_debug("save_packet ext:%d size:%d\n", head->x, rt_channel->send_list.list_write_size);
+                break;
+        }
+        usleep(500);
+=======
     //pthread_mutex_lock(&udp->udp_socket_mutex);
     head = (pjmedia_rtp_hdr*)(rtpPacket);
     status = sendto(rt_channel->sockfd, rtpPacket, size, 0,
@@ -407,9 +516,25 @@ ssize_t transport_channel_send(struct trans_channel *rt_channel, void *rtpPacket
         log_debug("save_packet ext:%d size:%d\n", head->x, rt_channel->send_list.list_write_size);
         packet_list_node_add(&rt_channel->send_list, rtpPacket, size);
         log_error("sendto rtp packet failed status:%d", status);
+>>>>>>> d0e83e775b61c141acf0f986720c005b7d0f6a80
     }
     else
-        log_debug("send_priority sendto the packet status:%d seq:%d",status, pj_ntohs(head->seq));
+    {
+        //usleep(2);
+        log_debug("send_priority sendto sockid:%d status:%d seq:%d",rt_channel->sockfd, status, pj_ntohs(head->seq));
+    }
+    
+    return status;
+}
+
+pj_status_t transport_priority_send_rtp( transport_udp *udp,
+							  const void *rtpPacket, pj_uint32_t size)
+{
+	ssize_t status        = 0;
+    pjmedia_rtp_hdr *head = (pjmedia_rtp_hdr*)(rtpPacket);
+    struct trans_channel *rt_channel = &udp->rtp_chanel;
+    
+    status = transport_channel_send(rt_channel, (char*)rtpPacket, size);
     
     return status;
 }
@@ -438,6 +563,12 @@ pj_status_t transport_send_rtcp(struct transport_udp*udp, const void *rtpPacket,
     return (pj_status_t)status;
 }
 
+<<<<<<< HEAD
+
+//
+
+=======
+>>>>>>> d0e83e775b61c141acf0f986720c005b7d0f6a80
 pj_status_t transport_send_rtp_seq(struct transport_udp*udp, const void *rtpPacket, pj_size_t size, unsigned short extSeq) {
     pj_status_t status = 0;
     
@@ -455,6 +586,29 @@ pj_status_t transport_send_rtp_seq(struct transport_udp*udp, const void *rtpPack
     return status;
 }
 
+<<<<<<< HEAD
+pj_status_t transport_save_packet( struct transport_udp*udp, const void *rtpPacket, pj_uint32_t size) {
+    pj_status_t status = 0;
+    
+    struct trans_channel *rtp_channel = &udp->rtp_chanel;
+    pjmedia_rtp_hdr *head = (pjmedia_rtp_hdr *)rtpPacket;
+    if(packet_list_check_overflow(rtp_channel->send_list.list_send_size,
+                                  rtp_channel->send_list.list_write_size, RTP_LIST_MAX_SIZE))
+    {
+        packet_list_reset(&rtp_channel->send_list);
+        log_debug("---reset---\n");
+    }
+    log_debug("save_packet ext:%d size:%d\n", head->x, rtp_channel->send_list.list_write_size);
+
+    //pthread_mutex_lock(&tp->rtp_cache_mutex);
+    packet_list_node_add(&rtp_channel->send_list, rtpPacket, size);
+    //pthread_mutex_unlock(&tp->rtp_cache_mutex);
+    
+    return status;
+}
+
+=======
+>>>>>>> d0e83e775b61c141acf0f986720c005b7d0f6a80
 pj_status_t  transport_reset_socket(struct transport_udp*  tp) {
     pj_status_t status = 0;
     return status;
