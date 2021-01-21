@@ -44,7 +44,6 @@ void ringbuffer_destory(RingBuffer* pRingBuffer)
 	//PJ_UNUSED_ARG(pRingBuffer);
     if(pRingBuffer->xbuffer) {
 		free(pRingBuffer->xbuffer);
-<<<<<<< HEAD
         pRingBuffer->xbuffer = NULL;
     }
 
@@ -53,12 +52,6 @@ void ringbuffer_destory(RingBuffer* pRingBuffer)
         pRingBuffer = NULL;
     }
     
-=======
-    }
-
-	free(pRingBuffer);
-
->>>>>>> d0e83e775b61c141acf0f986720c005b7d0f6a80
 	return;
 }
 

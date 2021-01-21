@@ -19,7 +19,6 @@ pj_status_t rtcp_build_rtcp_sr(void *buf, pj_size_t *length)
     log_debug("rtcp sr genaner lsr:%d", sr_pkt->rr.lsr);
     return PJ_SUCCESS;
 }
-<<<<<<< HEAD
 
 pj_status_t rtcp_build_rtcp_rr(void *buf, pj_size_t *length, int lsr, int dlsr)
 {
@@ -42,40 +41,13 @@ pj_status_t rtcp_build_rtcp_nack_(  void *buf, pj_size_t *length, unsigned begin
     pjmedia_rtcp_nack_pkg *pkg = (pjmedia_rtcp_nack_pkg *)buf;
     pkg->common.pt      = RTCP_NACK;
     pkg->common.fmt     = 1;
-=======
-
-pj_status_t rtcp_build_rtcp_rr(void *buf, pj_size_t *length, int lsr, int dlsr)
-{
-    pjmedia_rtcp_rr_pkt *rr_pkt = (pjmedia_rtcp_rr_pkt*)buf;
-    /* Init common RTCP SR header */
-    rr_pkt->common.version  = 2;
-    rr_pkt->common.count    = 1;
-    rr_pkt->common.pt       = RTCP_RR;
-    rr_pkt->common.length   = pj_htons(12);
-    rr_pkt->rr.lsr  = lsr;
-    rr_pkt->rr.dlsr = dlsr;
-    
-    *length = sizeof(struct pjmedia_rtcp_rr_pkt);
-    
-    return PJ_SUCCESS;
-}
-
-pj_status_t rtcp_build_rtcp_nack_(  void *buf, pj_size_t *length, unsigned begin_seq, unsigned seq_num)
-{
-    pjmedia_rtcp_nack_pkg *pkg = (pjmedia_rtcp_nack_pkg *)buf;
-    pkg->common.pt  = RTCP_NACK;
-    pkg->common.fmt = 1;
->>>>>>> d0e83e775b61c141acf0f986720c005b7d0f6a80
     pkg->common.version = 2;
     pkg->common.length  = sizeof(pjmedia_rtcp_nack_pkg);
     pkg->nack.base_seq  = begin_seq;
     pkg->nack.flag      = seq_num;
     
-<<<<<<< HEAD
     *length = pkg->common.length;
     
-=======
->>>>>>> d0e83e775b61c141acf0f986720c005b7d0f6a80
     return PJ_SUCCESS;
 }
 

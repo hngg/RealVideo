@@ -42,20 +42,11 @@ typedef struct
 	unsigned int   	uMaxPktTime;         /* 最大packet等待窗口时间 */
 	unsigned int   	uPacketCount;        /* ringbuffer接收packet总数 */
 	
-<<<<<<< HEAD
 	int				uPrePos;               /* 前一个rtp包写位置 */
     unsigned short  uPreSeq;             /* 前一个rtp包的seq */ //unsigned short
-=======
-	int	uPreSeq;                        /* 前一个rtp包的seq */ //unsigned short
-	int				uPrePos;               /* 前一个rtp包写位置 */	
->>>>>>> d0e83e775b61c141acf0f986720c005b7d0f6a80
 	pj_ssize_t      uPreTime;              /* 前一个rtp写入时间 */
 	int				uPreReadPos;       /* 前一个rtp包读取位置 */
-<<<<<<< HEAD
 	unsigned short  uPreReadSeq;       /* 前一个rtp包读取系列号 */ //unsigned short
-=======
-	int            	uPreReadSeq;       /* 前一个rtp包读取系列号 */ //unsigned short
->>>>>>> d0e83e775b61c141acf0f986720c005b7d0f6a80
 	pj_ssize_t		uPreReadTS;        /* 前一个rtp包读取时间戳 */
 
 	LostPackets		lostPack;

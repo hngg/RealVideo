@@ -127,21 +127,13 @@ static void on_rx_rtcp(void *useData, void *pkt, pj_ssize_t bytes_read)
     pjmedia_rtcp_common *common = (pjmedia_rtcp_common*)pkt;
     pjmedia_rtcp_sr_pkt *sr = NULL;
     pjmedia_rtcp_rr_pkt *rr = NULL;
-<<<<<<< HEAD
     pjmedia_rtcp_nack_pkg *nack = NULL;
     pjmedia_vid_stream  *stream = (pjmedia_vid_stream *)useData;
-=======
-    pjmedia_vid_stream *stream = NULL;
->>>>>>> d0e83e775b61c141acf0f986720c005b7d0f6a80
     char rtcp[100] = {0};
     pj_size_t size = 0;
     switch(common->pt)
     {
         case RTCP_SR:
-<<<<<<< HEAD
-=======
-            stream = (pjmedia_vid_stream *)useData;
->>>>>>> d0e83e775b61c141acf0f986720c005b7d0f6a80
             sr = (pjmedia_rtcp_sr_pkt*)pkt;
             rtcp_build_rtcp_rr(rtcp, &size, sr->rr.lsr, (int)(get_currenttime_us()-start_time));
             if(size>0){
@@ -152,7 +144,6 @@ static void on_rx_rtcp(void *useData, void *pkt, pj_ssize_t bytes_read)
             
         case RTCP_RR:
             rr = (pjmedia_rtcp_rr_pkt*)pkt;
-<<<<<<< HEAD
             int rrtus = (int)(get_currenttime_us() - rr->rr.lsr);
             if(stream->network_cb)
                 stream->network_cb(rrtus - rr->rr.dlsr, 0, 0);
@@ -166,13 +157,6 @@ static void on_rx_rtcp(void *useData, void *pkt, pj_ssize_t bytes_read)
             unsigned    count = nack->nack.flag;
             resend_losted_package(stream->trans, base_seq, count);
             log_debug("rtcp recv nack begin_seq:%d count:%d", base_seq, count);
-=======
-            log_debug("rtcp recv rr rtt time:%d lsr:%d us delay:%d us",
-                      (int)(get_currenttime_us() - rr->rr.lsr), rr->rr.lsr, rr->rr.dlsr );
-            break;
-            
-        case RTCP_NACK:
->>>>>>> d0e83e775b61c141acf0f986720c005b7d0f6a80
             break;
     }
 	//rtcp_nack_packet *nack = (rtcp_nack_packet*)pkt;
@@ -215,20 +199,12 @@ char* getVersion(void) {
 }
 
 RTC_API //for ios
-<<<<<<< HEAD
 int vid_stream_create_ios(const char*localAddr, unsigned short localRtpPort, on_rtp_frame frame_cb, int codecType) {
     int status = 0;
     memset(&g_vid_stream, 0, sizeof(pjmedia_vid_stream));
     
     status = stream_create(localAddr, localRtpPort, codecType);
     
-=======
-int vid_stream_create_ios(const char*localAddr, unsigned short localRtpPort, rtp_frame_cb frame_cb, int codecType) {
-    int status = 0;
-
-    status = stream_create(localAddr, localRtpPort, codecType);
-    
->>>>>>> d0e83e775b61c141acf0f986720c005b7d0f6a80
     g_vid_stream.vid_port.rtp_cb = frame_cb;
 
     //fp = fopen(filename, "wb");

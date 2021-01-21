@@ -540,11 +540,7 @@ PJ_DECL(void) pj_shutdown(void);
 typedef void (*pj_exit_callback)(void);
 
 typedef void (*on_recv_data)(void*, void*, pj_ssize_t);
-<<<<<<< HEAD
 
-=======
-typedef void (*on_network_status)(int rtt, int byte_count, long lost_rate);
->>>>>>> d0e83e775b61c141acf0f986720c005b7d0f6a80
 
 /**
  * Register cleanup function to be called by PJLIB when pj_shutdown() is 
