@@ -20,9 +20,17 @@ CFLAGS  += -Wall -O3 -arch arm64 -mios-version-min=6.0
 
 TARGET:RTCLIB
 
-OBJECTS = NALDecoder.o vid_codec.o vid_port.o vid_stream.o transport_udp.o  \
+OBJECTS = vid_codec.o vid_port.o vid_stream.o transport_udp.o  \
 		  packed/packets_list.o packed/jitter_buffer.o packed/callCplus.o packed/dealrtpunpack.o \
-		  packed/h264_packetizer.o packed/rtp.o packed/rtcp.o packed/pj/os_core_unix.o packed/pj/utils.o packed/pj/glog.o
+		  packed/h264_packetizer.o packed/rtp.o packed/rtcp.o \
+		  packed/pj/os_core_unix.o packed/pj/utils.o packed/pj/glog.o
+
+RTCLIB=RTCLIB
+$(RTCLIB):$(OBJECTS)
+	$(AR) rcs libVideoRtc.a $(OBJECTS)
+
+
+###############################################################################
 
 SEND_OBJ = $(OBJECTS) \
 			rtc_send.o
@@ -36,7 +44,7 @@ UNIT_OBJ = $(OBJECTS) \
 SEND=SEND
 RECV=RECV
 UNITTest=UNITTest
-RTCLIB=RTCLIB
+
 
 $(SEND):$(SEND_OBJ) 
 	$(CC) -o $(SEND) $(SEND_OBJ) $(LDFLAGS)
@@ -47,9 +55,7 @@ $(RECV):$(RECV_OBJ)
 $(UNITTest):$(UNIT_OBJ) 
 	$(CC) -o $(UNITTest) $(UNIT_OBJ) $(LDFLAGS)
 
-$(RTCLIB):$(OBJECTS)
-	$(AR) rcs libVideoRtc.a $(OBJECTS)
 
 .PHONY:clean
 clean:
-	rm $(SEND) $(RECV) $(OBJECTS) *.o
+	rm *.o packed/*.o packed/pj/*.o

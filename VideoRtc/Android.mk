@@ -45,8 +45,7 @@ LOCAL_C_INCLUDES += \
 		$(PACKED_SRC)
 
 #LOCAL_SRC_FILES := mediacodec_ndk.c FileDeCodecJni.cpp $(FFMPEG_PATH)/FfmpegContext.cpp $(THREAD_PATH)/gthreadpool.cpp
-LOCAL_SRC_FILES :=  NALDecoder.c \
-					vid_codec.c \
+LOCAL_SRC_FILES :=  vid_codec.c \
 					vid_port.c \
 					vid_stream.c \
 					transport_udp.c  \

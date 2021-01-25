@@ -1,5 +1,7 @@
 #include "utils.h"
 #include <stdio.h>
+#include "video_rtc_api.h"
+
 
 long get_currenttime_us() {
 	struct timeval tv_cur;
@@ -55,14 +57,14 @@ pj_uint16_t pj_htons(pj_uint16_t netshort)
 }
 
 
-
+RTC_API
 /*
     sample:src = "a=001"; char mainType[M][N] = {0};
     splitStr(src, "=", mainType);mainType[0] = "a"
 
     successful:return the split count, else return 0
 */
-int splitStr(char *src, char *format, char (*substr)[N])
+int splitStr(char *src, char *format, char (*substr)[COLUMN])
 {
     char * begin;
     char * pos;
@@ -76,7 +78,7 @@ int splitStr(char *src, char *format, char (*substr)[N])
         begin = pos + formatLen;
         count++;
         //should not out of memory
-        if(count+1>=M) {
+        if(count+1>=ROW) {
             printf("error:out of max array.\n");
             break;
         }
@@ -89,6 +91,7 @@ int splitStr(char *src, char *format, char (*substr)[N])
     return count;
 }
 
+RTC_API
 /*
     sameple:
     src = "a=001&b=002&c=003"; char outValue[100] = {0};
@@ -99,13 +102,13 @@ int splitStr(char *src, char *format, char (*substr)[N])
 int getSubkeyValue(char *src, char*format, char*subform, char*inKey, char*outValue)
 {
     int result = 0;
-    char mainType[M][N] = {0};
+    char mainType[ROW][COLUMN] = {};
     
     int i = splitStr(src, format, mainType);
     for(int j=0; j<i; j++)
     {
         //printf("%s\n", mainType[j]);
-        char subType[M][N] = {0};
+        char subType[ROW][COLUMN] = {};
         int m = splitStr(mainType[j], subform, subType);
         if(m==2)
         {
@@ -119,4 +122,9 @@ int getSubkeyValue(char *src, char*format, char*subform, char*inKey, char*outVal
         }
     }
     return result;
+}
+
+RTC_API
+char* getVersion(void) {
+    return VERSION;
 }

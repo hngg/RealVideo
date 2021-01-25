@@ -6,14 +6,11 @@
 #include "types.h"
 #include "rtp.h"
 #include "rtcp.h"
-
 #include "vid_port.h"
 
-//#include "jbuf_opt.h"
 #include "jitter_buffer.h"
 #include "transport_udp.h"
 
-#define VERSION "1.1.1"
 
 //#ifdef PJMEDIA_VIDEO_RESEND_OPTIMIZE
 #define RTCP_NACK 205
@@ -55,7 +52,7 @@
 #endif
 
 
-struct pjmedia_vid_stream
+typedef struct pjmedia_vid_stream
 {
     transport_udp           *trans;
     
@@ -73,25 +70,11 @@ struct pjmedia_vid_stream
 
     //unsigned		        out_rtcp_pkt_size;
     char		            out_rtcp_pkt[PJMEDIA_MAX_MTU];  /**< Outgoing RTCP packet.	    */
-};
-typedef struct pjmedia_vid_stream pjmedia_vid_stream;
+    
+}pjmedia_vid_stream;
+
 
 int packet_and_send_(struct pjmedia_vid_stream*stream, char* frameBuffer, int frameLen);
-
-
-#ifndef __ANDROID__
-int stream_send_test(const char *localAddr, unsigned short localPort, const char*remoteAddr,
-	unsigned short remotePort, const char*sendFile, int codecType);
-int stream_recv_test(const char *localAddr, short localPort, int codecType);
-
-int stream_send_rtcp_test(const char *localAddr, short localPort, const char*remoteAddr, 
-	short remotePort, int codecType);
-
-int rtp_packet_recv_264(struct pjmedia_vid_stream*stream, char* packetBuffer, int packetLen);
-void rtp_packet_and_unpack_notnet_test_264(pj_uint8_t *bits, pj_size_t bits_len);
-void h264_package_test(pj_uint8_t *bits, pj_size_t bits_len);
-void packet_and_send_test(pj_uint8_t *bits, pj_size_t bits_len);
-#endif //__ANDROID__
 
 
 #endif	/* __PJMEDIA_VID_STREAM_H__ */

@@ -21,8 +21,6 @@
 		9D4C7368250DA20F00F172DD /* VideoRtc.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 9D4C7365250DA20F00F172DD /* VideoRtc.h */; };
 		9D4C73D325109A5A00F172DD /* transport_udp.c in Sources */ = {isa = PBXBuildFile; fileRef = 9D4C73C625109A5A00F172DD /* transport_udp.c */; };
 		9D4C73D425109A5A00F172DD /* vid_stream.c in Sources */ = {isa = PBXBuildFile; fileRef = 9D4C73C825109A5A00F172DD /* vid_stream.c */; };
-		9D4C73D525109A5A00F172DD /* rtc_recv.c in Sources */ = {isa = PBXBuildFile; fileRef = 9D4C73CB25109A5A00F172DD /* rtc_recv.c */; };
-		9D4C73D625109A5B00F172DD /* rtc_send.c in Sources */ = {isa = PBXBuildFile; fileRef = 9D4C73CC25109A5A00F172DD /* rtc_send.c */; };
 		9D4C73D725109A5B00F172DD /* vid_port.c in Sources */ = {isa = PBXBuildFile; fileRef = 9D4C73CD25109A5A00F172DD /* vid_port.c */; };
 		9D4C73D825109A5B00F172DD /* vid_codec.c in Sources */ = {isa = PBXBuildFile; fileRef = 9D4C73CF25109A5A00F172DD /* vid_codec.c */; };
 /* End PBXBuildFile section */
@@ -72,14 +70,10 @@
 		9D4C7365250DA20F00F172DD /* VideoRtc.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = VideoRtc.h; sourceTree = "<group>"; };
 		9D4C7366250DA20F00F172DD /* VideoRtc.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = VideoRtc.m; sourceTree = "<group>"; };
 		9D4C73C325109A5A00F172DD /* vid_codec.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = vid_codec.h; sourceTree = "<group>"; };
-		9D4C73C425109A5A00F172DD /* NALDecoder.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = NALDecoder.c; sourceTree = "<group>"; };
-		9D4C73C525109A5A00F172DD /* NALDecoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NALDecoder.h; sourceTree = "<group>"; };
 		9D4C73C625109A5A00F172DD /* transport_udp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = transport_udp.c; sourceTree = "<group>"; };
 		9D4C73C725109A5A00F172DD /* transport_udp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = transport_udp.h; sourceTree = "<group>"; };
 		9D4C73C825109A5A00F172DD /* vid_stream.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = vid_stream.c; sourceTree = "<group>"; };
 		9D4C73C925109A5A00F172DD /* vid_port.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = vid_port.h; sourceTree = "<group>"; };
-		9D4C73CB25109A5A00F172DD /* rtc_recv.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = rtc_recv.c; sourceTree = "<group>"; };
-		9D4C73CC25109A5A00F172DD /* rtc_send.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = rtc_send.c; sourceTree = "<group>"; };
 		9D4C73CD25109A5A00F172DD /* vid_port.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = vid_port.c; sourceTree = "<group>"; };
 		9D4C73CE25109A5A00F172DD /* vid_stream.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = vid_stream.h; sourceTree = "<group>"; };
 		9D4C73CF25109A5A00F172DD /* vid_codec.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = vid_codec.c; sourceTree = "<group>"; };
@@ -169,10 +163,6 @@
 				9D35E028252ECE4600FFBD8A /* include */,
 				9D35E001252ECC2A00FFBD8A /* packed */,
 				9D5FB96C251C88A80036F0B6 /* video_rtc_api.h */,
-				9D4C73C425109A5A00F172DD /* NALDecoder.c */,
-				9D4C73C525109A5A00F172DD /* NALDecoder.h */,
-				9D4C73CB25109A5A00F172DD /* rtc_recv.c */,
-				9D4C73CC25109A5A00F172DD /* rtc_send.c */,
 				9D4C73C625109A5A00F172DD /* transport_udp.c */,
 				9D4C73C725109A5A00F172DD /* transport_udp.h */,
 				9D4C73D125109A5A00F172DD /* typedefs.h */,
@@ -252,11 +242,9 @@
 				9D4C73D425109A5A00F172DD /* vid_stream.c in Sources */,
 				9D4C73D825109A5B00F172DD /* vid_codec.c in Sources */,
 				9D35E017252ECC6E00FFBD8A /* jbuf_opt.c in Sources */,
-				9D4C73D525109A5A00F172DD /* rtc_recv.c in Sources */,
 				9D35E01B252ECC6E00FFBD8A /* callCplus.c in Sources */,
 				9D4C73D725109A5B00F172DD /* vid_port.c in Sources */,
 				9D35E01A252ECC6E00FFBD8A /* packets_list.c in Sources */,
-				9D4C73D625109A5B00F172DD /* rtc_send.c in Sources */,
 				9D35E025252ECD8800FFBD8A /* utils.c in Sources */,
 				9D35E026252ECD8800FFBD8A /* os_core_unix.c in Sources */,
 				9D35E016252ECC6E00FFBD8A /* h264_packetizer.c in Sources */,

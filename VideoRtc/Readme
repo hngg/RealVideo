@@ -1,3 +1,9 @@
-h264 file is a bareflow file:
-pixel:1280x720
-vlc can play.
+编译：
+Makefile 生成x86的测试程序
+Makefile_ios 生成iOS的.a文件，命令行下运行source runiphone.sh
+
+Android.mk 生成android的.so文件，命令行下运行source runbuild.bat
+
+
+注意：
+运行前先make clean
