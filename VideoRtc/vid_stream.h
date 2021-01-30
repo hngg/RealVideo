@@ -13,20 +13,10 @@
 
 
 //#ifdef PJMEDIA_VIDEO_RESEND_OPTIMIZE
-#define RTCP_NACK 205
-#define RTCP_RR   201
-#define RTCP_SR   200
-#define RTCP_FIR   192 /* add by j33783 20190805 */
-#define RTCP_SR_RR_FALG 1
-#define RTCP_SDES_FALG (RTCP_SR_RR_FALG << 1)
-#define RTCP_NACK_FALG (RTCP_SDES_FALG << 1)
-#define RTCP_BYTE_FALG (RTCP_NACK_FALG << 1)
-#define RTCP_FIR_FALG (RTCP_BYTE_FALG << 1)   /* add by j33783 20190805 */
 
-#define RTP_PACKET_SEQ_MAP_MAX 17
-#define HEARTBREAK_RTP_PT 127
-#define TERMINAL_TYPE 5
-
+//#define RTP_PACKET_SEQ_MAP_MAX 17
+//#define HEARTBREAK_RTP_PT 127
+//#define TERMINAL_TYPE 5
 
 #define RESEND_SUPPORT  1
 //#define RESEND_ARR_MAX_NUM  64
@@ -54,18 +44,19 @@
 
 typedef struct pjmedia_vid_stream
 {
-    transport_udp           *trans;
+    transport_udp           trans;
     
+    int                     codecType;
     pjmedia_format_id       fmt_id;
-    unsigned                clock_rate;
-    uint64_t                first_pts;
-    float                   pts_ratio;
+//    unsigned                clock_rate;
+//    uint64_t                first_pts;
+//    float                   pts_ratio;
     pjmedia_rtp_session     rtp_session;
     pjmedia_vid_port        vid_port;
-    RingBuffer*             ringbuf;          /**< Jitter buffer optimize.            */
-    void* rtp_unpack_buf;
-    void* rto_to_h264_obj;
-    int                     codecType;
+    RingBuffer*             ringbuf;          //Jitter buffer optimize.
+    void*                   rtp_unpack_buf;   //temp pointer, unpack frame buffer， point to pUnpack->stPreFrame.pFrameBuf
+    void*                   rto_to_h264_obj;  //had packed frame buffer,may thinking this as NAL frame
+    
     on_network_status       network_cb;
 
     //unsigned		        out_rtcp_pkt_size;

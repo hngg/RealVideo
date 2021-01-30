@@ -94,11 +94,10 @@ pjmedia_vid_rtp_unpack* pjmedia_unpack_alloc_frame()
         return NULL;
     }
 
-     pUnpack->iFrameType = 0;
      memset(pUnpack->pFrameBuf, 0, sizeof(H264_FRAME_MAX_SIZE));
-
+     pUnpack->iFrameType = 0;
      pUnpack->uFrameLen = 0;
-     pUnpack->usRtpCnt = 0;
+     pUnpack->usRtpCnt  = 0;
      pUnpack->usRtpESeq = -1;
      pUnpack->usRtpSSeq = -1;
      pUnpack->bVPS = 0;
@@ -948,7 +947,7 @@ int pjmedia_unpack_check_h265_nal(rtp_packet_info* pkginfo, pjmedia_vid_rtp_unpa
                         }
     			    else
     			   {
-    				pUnpack->bLenom = 1;
+                       pUnpack->bLenom = 1;
     			   }
                        log_debug("recv FU-A %s end packet, rtp seq:%d", pjmedia_unpack_get_frame_name(pUnpack->iFrameType), pkginfo->usSeq);
                    }

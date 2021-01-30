@@ -539,8 +539,11 @@ PJ_DECL(void) pj_shutdown(void);
  */
 typedef void (*pj_exit_callback)(void);
 
-typedef void (*on_recv_data)(void*, void*, pj_ssize_t);
+//for udp receive data callback
+typedef void (*on_recv_data)(void*userData, void*buffer, pj_ssize_t size);
 
+//for recvfrom thread
+typedef void (*func_worker_recvfrom)(void *arg);
 
 /**
  * Register cleanup function to be called by PJLIB when pj_shutdown() is 

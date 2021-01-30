@@ -106,7 +106,7 @@ static void on_rx_rtp(void *useData, void *pkt, pj_ssize_t bytes_read)
         pj_size_t size = 0;
 
         rtcp_build_rtcp_nack_(rtcp, &size, lp->bgnSeq, lp->packCount);
-        transport_send_rtcp(stream->trans, rtcp, (pj_uint32_t)size);
+        transport_send_rtcp(&stream->trans, rtcp, (pj_uint32_t)size);
 //		if(lp->packCount>0) {
 //			char buffer[PJMEDIA_MAX_MTU] = {0};
 //			rtcp_nack_packet *nack = (rtcp_nack_packet*)buffer;
@@ -137,7 +137,7 @@ static void on_rx_rtcp(void *useData, void *pkt, pj_ssize_t bytes_read)
             sr = (pjmedia_rtcp_sr_pkt*)pkt;
             rtcp_build_rtcp_rr(rtcp, &size, sr->rr.lsr, (int)(get_currenttime_us()-start_time));
             if(size>0){
-                transport_send_rtcp(stream->trans, rtcp, (pj_uint32_t)size);
+                transport_send_rtcp(&stream->trans, rtcp, (pj_uint32_t)size);
                 log_debug("rtcp recv sr and send size:%d lsr:%d", size, sr->rr.lsr);
             }
             break;
@@ -155,7 +155,7 @@ static void on_rx_rtcp(void *useData, void *pkt, pj_ssize_t bytes_read)
             nack = (pjmedia_rtcp_nack_pkg *)pkt;
             unsigned    base_seq = nack->nack.base_seq;
             unsigned    count = nack->nack.flag;
-            resend_losted_package(stream->trans, base_seq, count);
+            resend_losted_package(&stream->trans, base_seq, count);
             log_debug("rtcp recv nack begin_seq:%d count:%d", base_seq, count);
             break;
     }
@@ -169,22 +169,24 @@ int stream_create(const char*localAddr, unsigned short localRtpPort, int codecTy
     int status = 0;
     
     memset(&g_vid_stream, 0, sizeof(pjmedia_vid_stream));
-    g_vid_stream.fmt_id = (codecType==H264_HARD_CODEC)?PJMEDIA_FORMAT_H264:PJMEDIA_FORMAT_H265;
-    g_vid_stream.codecType = codecType;
     
-    g_vid_stream.rtp_session.out_pt = RTP_PT_H264;
+    g_vid_stream.codecType              = codecType;
     g_vid_stream.rtp_session.out_extseq = 0;
+    g_vid_stream.rtp_session.out_pt     = RTP_PT_H264;
+    g_vid_stream.fmt_id = (codecType==H264_HARD_CODEC)?PJMEDIA_FORMAT_H264:PJMEDIA_FORMAT_H265;
+    
     g_vid_stream.rto_to_h264_obj = Launch_CPlus(g_vid_stream.fmt_id);
     status = ringbuffer_create(0, RESEND_SUPPORT, &g_vid_stream.ringbuf);
+    
+    memset(&g_vid_stream.trans, 0, sizeof(transport_udp));
+    g_vid_stream.trans.user_stream  = &g_vid_stream;    //udp transport user data
+    g_vid_stream.vid_port.useStream = &g_vid_stream;    //vid_port user data
     
     status = transport_udp_create(&g_vid_stream.trans, localAddr, localRtpPort, &on_rx_rtp, &on_rx_rtcp);
     if(status<0) {
         log_error("transport_udp_create failed.");
         return status;
     }
-    
-    g_vid_stream.vid_port.useStream = &g_vid_stream;
-    g_vid_stream.trans->user_stream = &g_vid_stream;
     
     return status;
 }
@@ -201,6 +203,7 @@ int vid_stream_create_ios(const char*localAddr, unsigned short localRtpPort, on_
     
     status = stream_create(localAddr, localRtpPort, codecType);
     
+    //for ios
     g_vid_stream.vid_port.rtp_cb = frame_cb;
 
     //fp = fopen(filename, "wb");
@@ -225,12 +228,17 @@ int vid_stream_create(const char*localAddr, unsigned short localRtpPort, void*su
 RTC_API
 int vid_stream_destroy() {
 	int result = -1;
-	transport_udp_destroy(g_vid_stream.trans);  //release transport_udp* trans
+	transport_udp_destroy(&g_vid_stream.trans);  //release transport_udp* trans
     
 	if (g_vid_stream.ringbuf) {
 		ringbuffer_destory(g_vid_stream.ringbuf); //release IBaseRunLib* jb_opt
 		g_vid_stream.ringbuf = NULL;
 	}
+    
+    //release undecoded frame buffer
+    if(g_vid_stream.rto_to_h264_obj)
+        CRtpPackDecoderDestroy(g_vid_stream.rto_to_h264_obj);
+    
     
 	// if(fp) {
 	// 	fclose(fp);
@@ -240,6 +248,7 @@ int vid_stream_destroy() {
 	return result;
 }
 
+RTC_API
 int vid_stream_network_callback(on_network_status net_cb) {
     g_vid_stream.network_cb = net_cb;
     return  0;
@@ -249,7 +258,7 @@ RTC_API
 int vid_stream_start(const char*remoteAddr, unsigned short remoteRtpPort) {
 	int status = -1;
 	status = vid_port_start(&g_vid_stream.vid_port);
-	status = transport_udp_start( g_vid_stream.trans, remoteAddr, remoteRtpPort);
+	status = transport_udp_start( &g_vid_stream.trans, remoteAddr, remoteRtpPort);
 	return status;
 }
 
@@ -257,7 +266,7 @@ RTC_API
 int vid_stream_stop() {
 	int status = -1;
 	status = vid_port_stop(&g_vid_stream.vid_port);
-	transport_udp_stop( g_vid_stream.trans);
+	transport_udp_stop( &g_vid_stream.trans);
 	return status;
 }
 
@@ -292,7 +301,7 @@ int packet_and_send_(pjmedia_vid_stream*stream, char* frameBuffer, int frameLen)
 		rtp_update_hdr(&stream->rtp_session, rtpBuff, mark, package_out.size, timestamp );//set rtp head parameter and out_extseq++
 		pjmedia_rtp_hdr *hdr_data = (pjmedia_rtp_hdr*)rtpBuff;
 		hdr_data->x = (ext_len>0)?1:0;
-        result = transport_priority_send_rtp(stream->trans, rtpBuff, package_out.size + sizeof(pjmedia_rtp_hdr) + ext_len);
+        result = transport_priority_send_rtp(&stream->trans, rtpBuff, package_out.size + sizeof(pjmedia_rtp_hdr) + ext_len);
 		//result = transport_send_rtp_seq(stream->trans, rtpBuff, package_out.size + sizeof(pjmedia_rtp_hdr) + ext_len, stream->rtp_session.out_extseq);
 		if(package_out.enc_packed_pos>=frameLen)
 			break;

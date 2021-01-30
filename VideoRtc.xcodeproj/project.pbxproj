@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9D18284325C4098B00C71C5D /* comm.c in Sources */ = {isa = PBXBuildFile; fileRef = 9D18284225C4098B00C71C5D /* comm.c */; };
+		9D18284625C409AA00C71C5D /* med_command.c in Sources */ = {isa = PBXBuildFile; fileRef = 9D18284425C409A900C71C5D /* med_command.c */; };
 		9D35E014252ECC6E00FFBD8A /* rtcp.c in Sources */ = {isa = PBXBuildFile; fileRef = 9D35E004252ECC6D00FFBD8A /* rtcp.c */; };
 		9D35E015252ECC6E00FFBD8A /* dealrtpunpack.c in Sources */ = {isa = PBXBuildFile; fileRef = 9D35E005252ECC6D00FFBD8A /* dealrtpunpack.c */; };
 		9D35E016252ECC6E00FFBD8A /* h264_packetizer.c in Sources */ = {isa = PBXBuildFile; fileRef = 9D35E007252ECC6D00FFBD8A /* h264_packetizer.c */; };
@@ -39,6 +41,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		9D18284125C4098B00C71C5D /* comm.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = comm.h; path = packed/comm.h; sourceTree = "<group>"; };
+		9D18284225C4098B00C71C5D /* comm.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = comm.c; path = packed/comm.c; sourceTree = "<group>"; };
+		9D18284425C409A900C71C5D /* med_command.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = med_command.c; sourceTree = "<group>"; };
+		9D18284525C409AA00C71C5D /* med_command.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = med_command.h; sourceTree = "<group>"; };
 		9D35E002252ECC6D00FFBD8A /* jitter_buffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = jitter_buffer.h; path = packed/jitter_buffer.h; sourceTree = "<group>"; };
 		9D35E003252ECC6D00FFBD8A /* rtp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rtp.h; path = packed/rtp.h; sourceTree = "<group>"; };
 		9D35E004252ECC6D00FFBD8A /* rtcp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rtcp.c; path = packed/rtcp.c; sourceTree = "<group>"; };
@@ -95,6 +101,8 @@
 		9D35E001252ECC2A00FFBD8A /* packed */ = {
 			isa = PBXGroup;
 			children = (
+				9D18284225C4098B00C71C5D /* comm.c */,
+				9D18284125C4098B00C71C5D /* comm.h */,
 				9D35E01C252ECD6200FFBD8A /* pj */,
 				9D35E00E252ECC6E00FFBD8A /* callCplus.c */,
 				9D35E013252ECC6E00FFBD8A /* callCplus.h */,
@@ -160,6 +168,8 @@
 		9D4C7364250DA20F00F172DD /* VideoRtc */ = {
 			isa = PBXGroup;
 			children = (
+				9D18284425C409A900C71C5D /* med_command.c */,
+				9D18284525C409AA00C71C5D /* med_command.h */,
 				9D35E028252ECE4600FFBD8A /* include */,
 				9D35E001252ECC2A00FFBD8A /* packed */,
 				9D5FB96C251C88A80036F0B6 /* video_rtc_api.h */,
@@ -241,7 +251,9 @@
 				9D4C73D325109A5A00F172DD /* transport_udp.c in Sources */,
 				9D4C73D425109A5A00F172DD /* vid_stream.c in Sources */,
 				9D4C73D825109A5B00F172DD /* vid_codec.c in Sources */,
+				9D18284625C409AA00C71C5D /* med_command.c in Sources */,
 				9D35E017252ECC6E00FFBD8A /* jbuf_opt.c in Sources */,
+				9D18284325C4098B00C71C5D /* comm.c in Sources */,
 				9D35E01B252ECC6E00FFBD8A /* callCplus.c in Sources */,
 				9D4C73D725109A5B00F172DD /* vid_port.c in Sources */,
 				9D35E01A252ECC6E00FFBD8A /* packets_list.c in Sources */,

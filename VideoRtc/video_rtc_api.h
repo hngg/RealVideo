@@ -4,6 +4,7 @@
 
 #define VERSION "1.1.1"
 
+typedef int (*on_comm_recv)(char* buffer, int size);
 typedef int (*on_rtp_frame)(char* frameBuffer, int frameLen);
 typedef void (*on_network_status)(int rtt, int byte_count, long lost_rate);
 
