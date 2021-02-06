@@ -16,7 +16,7 @@ CFLAGS	+= $(COMPLIE_INCL)
 
 TARGET:SEND RECV UNITTest
 
-OBJECTS = vid_codec.o vid_port.o vid_stream.o transport_udp.o  \
+OBJECTS = vid_codec.o vid_port.o transport_udp.o vid_stream.o med_command.o \
 		  packed/packets_list.o packed/jitter_buffer.o packed/callCplus.o packed/dealrtpunpack.o \
 		  packed/h264_packetizer.o packed/rtp.o packed/rtcp.o \
 		  packed/pj/os_core_unix.o packed/pj/utils.o packed/pj/glog.o

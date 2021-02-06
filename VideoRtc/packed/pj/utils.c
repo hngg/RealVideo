@@ -104,8 +104,8 @@ int getSubkeyValue(char *src, char*format, char*subform, char*inKey, char*outVal
     int result = 0;
     char mainType[ROW][COLUMN] = {};
     
-    int i = splitStr(src, format, mainType);
-    for(int j=0; j<i; j++)
+    int j = 0, i = splitStr(src, format, mainType);
+    for(; j<i; j++)
     {
         //printf("%s\n", mainType[j]);
         char subType[ROW][COLUMN] = {};

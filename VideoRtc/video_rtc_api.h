@@ -12,6 +12,19 @@ typedef void (*on_network_status)(int rtt, int byte_count, long lost_rate);
 
 #define RTC_API
 
+//commands
+RTC_API
+int med_command_create(const char*localAddr, unsigned short localPort, on_comm_recv comm_cb);
+RTC_API
+int med_command_destroy(void);
+RTC_API
+int med_command_start(const char* remoteAddr, unsigned short remotePort);
+RTC_API
+int med_command_stop(void);
+RTC_API
+int med_command_send(char* buffer, pj_uint32_t size);
+
+
 //rtp
 RTC_API //for ios
 int vid_stream_create_ios(const char*localAddr, unsigned short localRtpPort, on_rtp_frame frame_cb, int codecType);

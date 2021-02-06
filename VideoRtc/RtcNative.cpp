@@ -18,6 +18,9 @@
 }
 #endif
 
+#define MAX_MTU_SIZE		1500
+#define MAX_PROFILE_SIZE	256
+
 
 #ifndef NELEM
 #define NELEM(x) ((int) (sizeof(x) / sizeof((x)[0])))
@@ -36,7 +39,7 @@ jbyteArray byteArray_notifyRender = NULL;
 int gVideoProcess = 0;
 
 typedef struct PROFILE_FRAME {
-	char data[1024];
+	char data[MAX_PROFILE_SIZE];
 	int  size;
 }PROFILE_FRAME;
 
@@ -98,7 +101,7 @@ int DataInfoCallback( int frameRate, int bitRate) {
 	return 0;
 }
 
-int FrameCallback( jbyte*frame, int length) {
+int CommCallback( jbyte*frame, int length) {
 	jint result = -1;
 	JNIEnv*		menv;
 	jobject		mobj;
@@ -124,10 +127,9 @@ int FrameCallback( jbyte*frame, int length) {
 	}
 
 	if(NULL==byteArray_notifyRender) {
-		jclass gbyteArray = (jclass)menv->NewByteArray(length);
-		byteArray_notifyRender = (jbyteArray)menv->NewGlobalRef(gbyteArray);
+		jclass gbyteArray = (jclass)menv->NewByteArray(MAX_MTU_SIZE);//release:DeleteLocalRef(gbyteArray)
+		byteArray_notifyRender = (jbyteArray)menv->NewGlobalRef(gbyteArray);//release:DeleteGlobalRef(gbyteArray)
 	}
-		
 
 	if(NULL != g_mClass)
 	{
@@ -142,14 +144,14 @@ int FrameCallback( jbyte*frame, int length) {
 			return -1;
 		}
 
-		jmethodID methodID_func = menv->GetMethodID(tmpClass, "onFrameCall", "([BI)V");//(Ljava/lang/String;I[B)
-		if(methodID_func&&byteArray_notifyRender&&frame) {
-			//MediaCodec_LOGE("------------------0:%d", length);
+		jmethodID methodID_func = menv->GetMethodID(tmpClass, "onCommRtc", "([BI)V");	//get non-static method from java class
+		if(methodID_func && byteArray_notifyRender && frame) {
+			//MediaCodec_LOGE("---------0:%d", length);
 			
 			menv->SetByteArrayRegion( byteArray_notifyRender, 0, length, frame);
-			//MediaCodec_LOGE("------------------2");
+			//MediaCodec_LOGE("---------2");
 			menv->CallVoidMethod(mobj, methodID_func, byteArray_notifyRender, length);
-			//MediaCodec_LOGE("------------------3");
+			//MediaCodec_LOGE("---------3");
 		}
 		else {
 			log_error("function: %s, line: %d,find method error!", __FUNCTION__, __LINE__);
@@ -160,6 +162,55 @@ int FrameCallback( jbyte*frame, int length) {
 	return 0;
 }
 
+//command callback function
+int command_call(char* buffer, int size) {
+	int status = -1;
+	if(size>0 && buffer)
+		status = CommCallback((jbyte*)buffer, size);//update to java layer
+	
+	return status;
+}
+
+int startCommRtc(JNIEnv *env, jobject obj, jstring strLocalAddr, int localPort,
+					jstring strRemoteAddr, int remotePort)
+{
+	int status = 0;
+	jboolean isOk = JNI_FALSE;
+	const char* localAddr = env->GetStringUTFChars(strLocalAddr, &isOk);
+    const char* remoteAddr = env->GetStringUTFChars(strRemoteAddr, &isOk);
+	status = med_command_create(localAddr, localPort, &command_call);//local
+	if(status>=0)
+		med_command_start( remoteAddr, remotePort);//remote
+    
+	env->ReleaseStringUTFChars(strLocalAddr, localAddr);
+    env->ReleaseStringUTFChars(strRemoteAddr, remoteAddr);
+    
+	//need this method to get global jclass
+	g_mClass = env->GetObjectClass(obj);
+	
+	log_info("startCommRtc done.");
+
+	return status;
+}
+
+int stopCommRtc(JNIEnv *env, jobject obj) {
+	int status = 0;
+	med_command_stop();
+	med_command_destroy();
+	
+	log_info("stopCommRtc done.");
+
+	return status;
+}
+
+int sendCommData(JNIEnv *env, jobject obj, jobject byteBuf, jint size) {
+	//jlong dstSize;
+	char *data = (char*)env->GetDirectBufferAddress(byteBuf);
+	
+	return med_command_send(data, size);
+}
+
+///////////////////////////////////////////////////////rtp/////////////////////////////////////////
 int startRecvRender(JNIEnv *env, jobject obj, jstring strLocalAddr, int localPort,
 					jstring strRemoteAddr, int remotePort, jobject surface, int codecType)
 {
@@ -168,9 +219,9 @@ int startRecvRender(JNIEnv *env, jobject obj, jstring strLocalAddr, int localPor
 	ANativeWindow *pAnw = ANativeWindow_fromSurface(env, surface);
 	const char* localAddr = env->GetStringUTFChars(strLocalAddr, &isOk);
     const char* remoteAddr = env->GetStringUTFChars(strRemoteAddr, &isOk);
-	status = vid_stream_create(localAddr, localPort, pAnw, codecType);//local
+	status = vid_stream_create(localAddr, localPort, pAnw, codecType);//local address
 	if(status>=0)
-		vid_stream_start( remoteAddr, remotePort);//remote
+		vid_stream_start( remoteAddr, remotePort);//remote address
     
 	env->ReleaseStringUTFChars(strLocalAddr, localAddr);
     env->ReleaseStringUTFChars(strRemoteAddr, remoteAddr);
@@ -221,28 +272,38 @@ int stopSendVideo(JNIEnv *env, jobject obj) {
 int sendSampleData(JNIEnv *env, jobject obj, jobject byteBuf, jint offset, jint size, jlong ptus,  jint flags) {
 	//jlong dstSize;
 	char *data = (char*)env->GetDirectBufferAddress(byteBuf);
-	// if(dst == NULL) {
-	// }else
-	// {
-	// 	dstSize = env->GetDirectBufferCapacity(byteBuf);
-	// }
 
-	// char*data = (char*)dst;
 	// log_info("sendSampleData dst type:%d dstSize:%d", data[4], size);
 
-	if(flags == 2) {
-		memcpy(gProfile.data, data, size);
-		gProfile.size = size;
+	switch(flags) {
+		case 1://key frame
+			if(gProfile.size>0)
+				packet_and_send(gProfile.data, gProfile.size);
+		break;
+
+		case 2://sps and pps frame, save to profile buffer
+			memcpy(gProfile.data, data, size);
+			gProfile.size = size;
+		break;
 	}
 
-	if(gProfile.size>0 && flags==1) {
-		packet_and_send(gProfile.data, gProfile.size);
-	}
+	// if(flags == 2) {
+	// 	memcpy(gProfile.data, data, size);
+	// 	gProfile.size = size;
+	// }
+
+	// if(gProfile.size>0 && flags==1) {
+	// 	packet_and_send(gProfile.data, gProfile.size);
+	// }
 	
 	return packet_and_send(data, size);
 }
 
 static JNINativeMethod video_method_table[] = {
+		{ "startCommRtc", "(Ljava/lang/String;ILjava/lang/String;I)I", (void *)startCommRtc },
+		{ "stopCommRtc", "()I", (void *)stopCommRtc },
+		{ "sendCommData", "(Ljava/nio/ByteBuffer;I)I", (void *)sendCommData },
+
 		{ "startRecvRender", "(Ljava/lang/String;ILjava/lang/String;ILandroid/view/Surface;I)I", (void *)startRecvRender },
 		{ "stopRecvRender", "()I", (void *)stopRecvRender },
 
@@ -260,6 +321,7 @@ int registerNativeMethods(JNIEnv* env, const char* className, JNINativeMethod* m
         log_info("Native registration unable to find class '%s'", className);
         return JNI_FALSE;
     }
+	
     if (env->RegisterNatives(clazz, methods, numMethods) < 0) {
         log_info("RegisterNatives failed for '%s'", className);
         return JNI_FALSE;
@@ -272,6 +334,7 @@ extern "C" jint JNI_OnLoad(JavaVM* vm, void* reserved)
 {
 	JNIEnv* env = NULL;
 	jint result = -1;
+	log_info("enc JNI_OnLoad......1");
 	if (vm->GetEnv((void**) &env, JNI_VERSION_1_4) != JNI_OK) {
 		log_error("GetEnv failed!");
 		return result;
@@ -279,7 +342,6 @@ extern "C" jint JNI_OnLoad(JavaVM* vm, void* reserved)
 
 	g_javaVM = vm;
 
-	log_info("enc JNI_OnLoad......1");
 	registerNativeMethods(env,
 			REG_PATH, video_method_table,
 			NELEM(video_method_table));

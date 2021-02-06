@@ -108,6 +108,21 @@ typedef struct pjmedia_vid_buf
 		pj_uint16_t	   buf_size;        /*buffer size*/
 } pjmedia_vid_buf;
 
+typedef struct trans_channel_
+{
+    void *user_udp;
+    pj_bool_t               is_rtcp;
+    pj_bool_t               attached;
+    int                     sockfd;     //socket id
+    struct sockaddr_in      local_addr;   //local socket addr to bind
+    struct sockaddr_in      remote_addr;   //remote socket addr to sendto
+    struct sockaddr_in      client_addr;   //client socket addr of recvfrom
+    pj_thread_t recv_tid;               //recv thread id
+    func_worker_recvfrom    work_recv;  //use for recvfrom thread
+    on_recv_data recv_cb;               //recv data callback fuction
+    char recv_buf[RTP_LEN];             //recv buffer
+}trans_channel_;
+
 typedef struct trans_channel
 {
     void *user_udp;
@@ -155,11 +170,11 @@ pj_status_t transport_channel_create( struct trans_channel*chan, const char *loc
 pj_status_t transport_channel_destroy( struct trans_channel*chan);
 pj_status_t transport_channel_start( struct trans_channel*chan, const char*remoteAddr, unsigned short remoteRtpPort, char*name);
 pj_status_t transport_channel_stop( struct trans_channel*chan);
-ssize_t transport_channel_send(struct trans_channel *rt_channel, void *rtpPacket, pj_uint32_t size);
+ssize_t transport_channel_send( struct trans_channel *chan, void *rtpPacket, pj_uint32_t size);
 
 
 
-//create and destroy
+//rtp create and destroy
 pj_status_t transport_udp_create(struct transport_udp* udpout, const char *addr, unsigned short port,
                                     void (*rtp_cb)(void*, void*, pj_ssize_t),
 				                    void (*rtcp_cb)(void*, void*, pj_ssize_t));

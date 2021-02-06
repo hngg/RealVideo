@@ -48,6 +48,7 @@ LOCAL_C_INCLUDES += \
 LOCAL_SRC_FILES :=  vid_codec.c \
 					vid_port.c \
 					vid_stream.c \
+					med_command.c \
 					transport_udp.c  \
 					packed/packets_list.c \
 					packed/jitter_buffer.c \

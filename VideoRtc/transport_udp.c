@@ -64,13 +64,11 @@ ssize_t channel_recv_loop(struct trans_channel*recv_channel, void *user_udp)
             }
         }//rtcp sr heartbeat
         
-        /* add by j33783 20190621 begin */
         timeout.tv_sec  = 0;
         timeout.tv_usec = 200000;//100ms
         FD_ZERO(&recv_set);
         FD_SET(recv_channel->sockfd, &recv_set);
         status = select(recv_channel->sockfd + 1, &recv_set, NULL, NULL, &timeout);
-
         if(status>0)
         {
            if(FD_ISSET(recv_channel->sockfd, &recv_set)) {
@@ -289,7 +287,7 @@ pj_status_t transport_channel_create( struct trans_channel*chan, const char *loc
         chan->resend = create_resend_buf();
     }
     
-    log_debug("transport_channel_create %s done sock:%d", sockTypt, rtp_sock);
+    log_debug("transport_channel_create %s done sock:%d bind port:%d", sockTypt, rtp_sock, localPort);
     
     return status;
 }
@@ -359,7 +357,6 @@ pj_status_t transport_udp_destroy( struct transport_udp* udp) {
     return status;
 }
 
-
 pj_status_t transport_channel_start( struct trans_channel*chan, const char*remoteAddr, unsigned short remoteRtpPort, char*name)
 {
     pj_status_t status = 0;
@@ -395,7 +392,7 @@ pj_status_t transport_udp_start( struct transport_udp* udp, const char*remoteAdd
 pj_status_t transport_channel_stop( struct trans_channel*chan)
 {
     pj_status_t status = 0;
-    chan->recv_tid.thread_quit     = 1;
+    chan->recv_tid.thread_quit = 1;
     return status;
 }
 
@@ -410,7 +407,7 @@ ssize_t transport_channel_send(struct trans_channel *rt_channel, void *rtpPacket
 {
     ssize_t status        = 0;
     pjmedia_rtp_hdr *head = NULL;
-    socklen_t addr_len =sizeof(struct sockaddr_in);
+    socklen_t addr_len = sizeof(struct sockaddr_in);
     
     //only rtp will save the package that hadnot been sent
     if(!rt_channel->is_rtcp) {
